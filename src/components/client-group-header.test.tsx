@@ -53,7 +53,7 @@ describe('ClientGroupHeader', () => {
     expect(editButton).toHaveClass('text-blue-100');
     expect(actions).toContainElement(removeButton);
     expect(actions).toContainElement(editButton);
-    expect(Array.from(actions.children).at(-1)).toBe(editButton);
+    expect(Array.from(actions.children).at(0)).toBe(editButton);
   });
 
   it('opens client edit details in a modal instead of inline details', () => {

@@ -64,6 +64,9 @@ export function ClientGroupHeader({ clientGroup }: { clientGroup: ClientGroup })
         <h1 className="text-4xl font-semibold tracking-tight text-white">{clientGroup.name}</h1>
         {canManageClient ? (
           <div data-testid="client-management-actions" className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={() => setIsEditOpen(true)} className={secondaryButtonClass}>
+              Edit Client
+            </button>
             <form action={deleteClientGroupAction}>
               <input type="hidden" name="clientGroupId" value={clientGroup.id} />
               <button
@@ -75,9 +78,6 @@ export function ClientGroupHeader({ clientGroup }: { clientGroup: ClientGroup })
                 <span>Remove Client</span>
               </button>
             </form>
-            <button type="button" onClick={() => setIsEditOpen(true)} className={secondaryButtonClass}>
-              Edit Client
-            </button>
           </div>
         ) : null}
       </div>
