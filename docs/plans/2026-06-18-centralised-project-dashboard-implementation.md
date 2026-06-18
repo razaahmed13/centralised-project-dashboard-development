@@ -19,16 +19,16 @@
   - Google OAuth restricted to `hello@neodym.ai` initially.
   - Custom admin password stored securely through environment variables.
 - Future support for other Neodym Google accounts through an email allowlist.
-- Tree-like data model:
-  - top-level categories: `internal` and `client`
-  - clients/organizations under categories
-  - projects under each client/organization
-  - one or more links per project
+- Client-group based data model:
+  - sidebar lists all client groups directly: `Internal Projects`, then each client such as `Triangle IP`
+  - `Internal Projects` is the default built-in client group and is the only group present at project start
+  - projects belong to exactly one client group
+  - one or more links and optional encrypted credentials/access notes belong to each project
 - Admin CRUD:
-  - add/edit/remove clients
-  - add/edit/remove projects
-  - add/edit/remove project links
-  - add/edit/remove encrypted credentials/access notes
+  - add/edit/remove client groups with name, niche/industry, and optional short description
+  - add/edit/remove projects from a dashboard-level **Add Project** button
+  - project form includes name, link, credential email/username, credential password, client-group dropdown, and optional short description
+  - add/edit/remove project links and encrypted credentials/access notes
 - Project action button: **Open & Copy Credentials**.
   - Opens project URL in a new tab.
   - Copies username/password/access notes to clipboard in the same click handler.
@@ -58,31 +58,32 @@
 
 ---
 
+## UI Structure Update
+
+- Use a minimalist spatial dashboard inspired by `https://neodym.ai/`: deep dark background, blue accents, soft glows, clean cards, and generous spacing.
+- Sidebar is client-group based, not category based. It lists `Internal Projects` first, followed by each added client.
+- At initial launch, the sidebar contains only `Internal Projects`.
+- Main dashboard header shows the selected group name, niche/industry, and optional short description.
+- Top-level actions stay visible on the dashboard:
+  - **Add Client** opens a form with name, niche/industry, and optional very short description.
+  - **Add Project** opens a form with project name, URL, credential email/username, credential password, client-group dropdown, optional short description, and optional access notes.
+- Project cards remain spatial/minimal and expose primary action **Open & Copy Credentials**.
+- If the number of projects grows, add search, filters, and an optional compact list mode without changing the core data model.
+
 ## Proposed Data Model
 
-### `categories`
+### `client_groups`
 
-For MVP this can be fixed in code (`internal`, `client`) or stored in DB. Prefer DB if we want full tree extensibility.
-
-Fields:
-
-- `id` UUID primary key
-- `key` text unique, e.g. `internal`, `client`
-- `name` text, e.g. `Internal Projects`, `Client Projects`
-- `sort_order` integer
-- `created_at` timestamp
-- `updated_at` timestamp
-
-### `organizations`
-
-Represents Neodym or a client such as Triangle IP.
+Represents the sidebar groups. `Internal Projects` is the built-in default group and behaves like a client group. Additional rows are real clients such as Triangle IP. The sidebar should list these groups directly instead of nesting them under `Internal Projects` / `Client Projects` category headings.
 
 Fields:
 
 - `id` UUID primary key
-- `category_id` UUID foreign key
-- `name` text
-- `description` text nullable
+- `name` text unique, e.g. `Internal Projects`, `Triangle IP`
+- `slug` text unique
+- `niche` text nullable, e.g. `Legal Tech`, `Recruitment`, `Internal Operations`
+- `description` text nullable, very short
+- `is_internal` boolean default false; true only for `Internal Projects`
 - `sort_order` integer
 - `created_at` timestamp
 - `updated_at` timestamp
@@ -92,7 +93,7 @@ Fields:
 Fields:
 
 - `id` UUID primary key
-- `organization_id` UUID foreign key
+- `client_group_id` UUID foreign key
 - `name` text
 - `description` text nullable
 - `status` enum/text: `active`, `inactive`, `archived`
@@ -226,23 +227,24 @@ Notes:
 **Steps:**
 
 1. Add dashboard shell with sidebar and topbar.
-2. Add category navigation placeholders: Internal Projects, Client Projects.
-3. Add responsive layout for desktop/mobile.
-4. Add empty-state card for no projects.
-5. Add basic visual polish: subdued background, clean cards, soft borders.
-6. Add component tests for shell rendering.
-7. Commit: `feat: add dashboard shell`.
+2. Add sidebar group list placeholder that initially shows only `Internal Projects`; later client groups appear directly below it.
+3. Add topbar actions: **Add Client** and **Add Project**.
+4. Add responsive layout for desktop/mobile.
+5. Add empty-state card for no projects in the selected group.
+6. Add basic visual polish: Neodym-inspired dark background, spatial cards, soft blue borders/glow.
+7. Add component tests for shell rendering.
+8. Commit: `feat: add dashboard shell`.
 
 **Verification:**
 
 - UI renders in browser.
-- Component test confirms category labels are visible.
+- Component test confirms `Internal Projects`, `Add Client`, and `Add Project` are visible.
 
 ---
 
 ### Task 3: Configure Supabase schema/migrations
 
-**Objective:** Add database schema for categories, organizations, projects, links, credentials, and audit logs.
+**Objective:** Add database schema for client groups, projects, links, credentials, and audit logs.
 
 **Files:**
 - Create: `supabase/migrations/001_initial_schema.sql` or Prisma migration files
@@ -253,10 +255,10 @@ Notes:
 
 1. Define DB tables and indexes.
 2. Add cascade delete rules carefully:
-   - deleting an organization deletes projects/links/credentials
+   - deleting a client group deletes its projects/links/credentials, except protect the built-in `Internal Projects` group from accidental deletion
    - deleting a link deletes its credential record
 3. Add timestamp update triggers if using raw SQL.
-4. Add seed values for categories: Internal Projects, Client Projects.
+4. Add seed value for the default client group: `Internal Projects` with `is_internal=true`.
 5. Document schema.
 6. Run migration locally or against hosted Supabase test project.
 7. Commit: `feat: add dashboard database schema`.
@@ -265,7 +267,7 @@ Notes:
 
 - Migration runs successfully.
 - Tables are visible in Supabase.
-- Seed categories exist.
+- Seed `Internal Projects` client group exists.
 
 ---
 
@@ -328,38 +330,39 @@ Notes:
 
 ### Task 6: Build read-only dashboard data view
 
-**Objective:** Render categories, organizations, projects, and links from Supabase.
+**Objective:** Render client groups, selected-group projects, and project links from Supabase.
 
 **Files:**
 - Create: `src/lib/dashboard-data.ts`
 - Modify: `src/app/page.tsx`
-- Create: `src/components/project-tree.tsx`
+- Create: `src/components/client-group-sidebar.tsx`
 - Create: `src/components/project-card.tsx`
 - Create: `src/components/project-link-button.tsx`
 
 **Steps:**
 
-1. Implement server-side query for the full project tree excluding encrypted credential values.
-2. Render categories and organizations.
-3. Render project cards with link buttons.
-4. Show badges for projects with stored credentials.
-5. Add loading/error states.
-6. Add tests for rendering project tree from fixture data.
-7. Commit: `feat: render project dashboard tree`.
+1. Implement server-side query for client groups and projects excluding encrypted credential values.
+2. Render sidebar client groups directly: `Internal Projects`, then added clients.
+3. Render projects for the selected client group as spatial cards with link buttons.
+4. Show client metadata in the main header: name, niche, optional short description.
+5. Show badges for projects with stored credentials.
+6. Add loading/error states.
+7. Add tests for rendering client groups and selected-group projects from fixture data.
+8. Commit: `feat: render client-group dashboard`.
 
 **Verification:**
 
-- Dashboard displays seeded categories.
+- Dashboard sidebar displays seeded `Internal Projects` group.
 - No credentials appear in page source or client props.
 
 ---
 
 ### Task 7: Add CRUD server actions
 
-**Objective:** Allow authenticated admins to manage categories/organizations/projects/links/credentials.
+**Objective:** Allow authenticated admins to manage client groups, projects, links, and credentials.
 
 **Files:**
-- Create: `src/app/actions/organizations.ts`
+- Create: `src/app/actions/client-groups.ts`
 - Create: `src/app/actions/projects.ts`
 - Create: `src/app/actions/project-links.ts`
 - Create: `src/app/actions/credentials.ts`
@@ -369,18 +372,21 @@ Notes:
 **Steps:**
 
 1. Add Zod schemas for all form inputs.
-2. Add create/update/delete organization actions.
-3. Add create/update/delete project actions.
-4. Add create/update/delete project link actions.
-5. Add create/update/delete credential actions using encryption utility.
-6. Add audit log creation for mutations.
-7. Add unit tests for validation and encryption-on-write behavior.
-8. Commit: `feat: add dashboard admin CRUD actions`.
+2. Add create/update/delete client group actions with fields: name, niche, optional short description.
+3. Prevent deleting the built-in `Internal Projects` group.
+4. Add create/update/delete project actions with client-group dropdown support.
+5. Add create/update/delete project link actions.
+6. Add create/update/delete credential actions using encryption utility.
+7. Add audit log creation for mutations.
+8. Add unit tests for validation and encryption-on-write behavior.
+9. Commit: `feat: add dashboard admin CRUD actions`.
 
 **Verification:**
 
 - Invalid URLs are rejected.
 - Empty project names are rejected.
+- Empty client group names are rejected.
+- Built-in `Internal Projects` cannot be deleted.
 - Credentials are stored encrypted, never plaintext.
 - Audit log rows are created.
 
@@ -391,7 +397,7 @@ Notes:
 **Objective:** Provide UI to add/edit/remove all dashboard entities.
 
 **Files:**
-- Create: `src/components/forms/organization-form.tsx`
+- Create: `src/components/forms/client-group-form.tsx`
 - Create: `src/components/forms/project-form.tsx`
 - Create: `src/components/forms/project-link-form.tsx`
 - Create: `src/components/forms/credential-form.tsx`
@@ -399,18 +405,21 @@ Notes:
 
 **Steps:**
 
-1. Add buttons for creating organizations under each category.
-2. Add project create/edit forms.
-3. Add project link create/edit forms.
-4. Add credential create/edit form with masked password field.
-5. Add delete confirmations.
-6. Add optimistic or post-submit refresh behavior.
-7. Add tests for form validation messages.
-8. Commit: `feat: add admin management forms`.
+1. Add dashboard-level **Add Client** button.
+2. Add client form fields: name, niche/industry, optional very short description.
+3. Add dashboard-level **Add Project** button.
+4. Add project form fields: name, link URL, credential email/username, credential password, client-group dropdown including `Internal Projects`, optional short description, optional access notes.
+5. Add project edit form and project link edit form for future multiple-link support.
+6. Add credential create/edit form with masked password field.
+7. Add delete confirmations.
+8. Add optimistic or post-submit refresh behavior.
+9. Add tests for form validation messages.
+10. Commit: `feat: add admin management forms`.
 
 **Verification:**
 
-- Admin can create, edit, and delete an organization/project/link.
+- Admin can create, edit, and delete a client group/project/link.
+- Admin can add a project from the top-level dashboard button and assign it to a client group using a dropdown.
 - Admin can add encrypted credentials to a link.
 - UI refreshes after changes.
 
@@ -469,8 +478,9 @@ Notes:
 **Steps:**
 
 1. Create an intake template with required fields:
-   - category
-   - organization/client
+   - client group name (`Internal Projects` or client name)
+   - client niche/industry when creating a new client group
+   - client short description when creating a new client group
    - project name
    - project description
    - link label
@@ -488,7 +498,7 @@ Notes:
 **Verification:**
 
 - Dry-run prints planned inserts without writing.
-- Import creates categories/orgs/projects/links/credentials correctly.
+- Import creates client groups/projects/links/credentials correctly.
 
 ---
 
@@ -656,8 +666,8 @@ If external tools require smoother credential entry, consider:
 - Google OAuth allows `hello@neodym.ai` and rejects non-allowed emails.
 - Custom admin password login works.
 - Allowlist supports adding future Neodym team Google accounts through env/config.
-- Dashboard displays Internal Projects and Client Projects.
-- Admin can manage organizations, projects, links, and credentials.
+- Sidebar lists client groups directly, starting with only `Internal Projects`; newly added clients appear below it.
+- Admin can manage client groups, projects, links, and credentials.
 - Credentials are encrypted at rest.
 - Clicking **Open & Copy Credentials** opens the project in a new tab and copies credentials when browser permission allows.
 - Clipboard failure has a clear manual fallback.
