@@ -8,6 +8,15 @@ vi.mock('next-auth/react', () => ({
 }));
 
 describe('LoginPanel', () => {
+  it('shows the Google logo before the continue with Google text', () => {
+    render(<LoginPanel />);
+
+    const googleButton = screen.getByRole('button', { name: /continue with google/i });
+    const logo = googleButton.querySelector('svg[aria-label="Google logo"]');
+    expect(logo).toBeTruthy();
+    expect(googleButton.firstElementChild).toBe(logo);
+  });
+
   it('shows a red inline admin password error above the password submit button', () => {
     render(<LoginPanel authError="CredentialsSignin" />);
 
