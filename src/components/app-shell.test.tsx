@@ -63,6 +63,17 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: /internal projects/i })).not.toHaveAttribute('aria-current');
   });
 
+  it('keeps the desktop sidebar fixed while the page content scrolls', () => {
+    render(
+      <AppShell>
+        <div>Dashboard content</div>
+      </AppShell>,
+    );
+
+    expect(screen.getByRole('complementary')).toHaveClass('lg:fixed');
+    expect(screen.getByRole('main')).toHaveClass('lg:ml-72');
+  });
+
   it('logs out to the login page from the persistent sidebar button', () => {
     render(
       <AppShell>

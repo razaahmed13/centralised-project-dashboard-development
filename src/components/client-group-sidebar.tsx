@@ -18,7 +18,7 @@ export function ClientGroupSidebar({
   auditActive?: boolean;
 }) {
   return (
-    <aside className="hidden h-screen w-72 shrink-0 flex-col border-r border-blue-400/10 bg-slate-950/60 p-5 backdrop-blur-xl lg:flex">
+    <aside className="hidden h-screen w-72 shrink-0 flex-col border-r border-blue-400/10 bg-slate-950/60 p-5 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:flex">
       <div className="shrink-0">
         <Link href="/" className="block text-xl font-semibold tracking-tight text-white">
           Neodym<span className="text-blue-400">.</span>
