@@ -23,7 +23,7 @@ export async function getActorEmail() {
 export async function requirePageSession(callbackUrl = '/') {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.email) {
+  if (!session) {
     redirect(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
 

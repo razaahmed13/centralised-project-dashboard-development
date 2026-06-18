@@ -42,4 +42,12 @@ describe('requirePageSession', () => {
     await expect(requirePageSession('/')).resolves.toBe(session);
     expect(redirectMock).not.toHaveBeenCalled();
   });
+
+  it('does not redirect when NextAuth returns a session without an email', async () => {
+    const session = { user: { name: 'Neodym Admin' } };
+    getServerSessionMock.mockResolvedValue(session);
+
+    await expect(requirePageSession('/')).resolves.toBe(session);
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
 });
