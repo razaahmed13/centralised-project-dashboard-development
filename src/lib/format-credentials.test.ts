@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { formatCredentialsForClipboard } from './format-credentials';
 
 describe('formatCredentialsForClipboard', () => {
-  it('formats project credentials without masking the copied password', () => {
+  it('formats only username and password values on separate lines', () => {
     const result = formatCredentialsForClipboard({
       projectName: 'Token Tracker',
       url: 'https://token.neodym.ai',
@@ -12,22 +12,30 @@ describe('formatCredentialsForClipboard', () => {
       notes: 'Use shared admin account.',
     });
 
-    expect(result).toContain('Project: Token Tracker');
-    expect(result).toContain('URL: https://token.neodym.ai');
-    expect(result).toContain('Username: hello@neodym.ai');
-    expect(result).toContain('Password: secret-password');
-    expect(result).toContain('Notes: Use shared admin account.');
+    expect(result).toBe('hello@neodym.ai\nsecret-password');
   });
 
-  it('omits blank credential fields', () => {
+  it('omits blank username or password values', () => {
+    const result = formatCredentialsForClipboard({
+      projectName: 'Docs',
+      url: 'https://docs.neodym.ai',
+      username: '',
+      password: 'secret-password',
+      notes: 'Use shared admin account.',
+    });
+
+    expect(result).toBe('secret-password');
+  });
+
+  it('returns an empty string when username and password are blank', () => {
     const result = formatCredentialsForClipboard({
       projectName: 'Docs',
       url: 'https://docs.neodym.ai',
       username: '',
       password: '',
-      notes: '',
+      notes: 'Use shared admin account.',
     });
 
-    expect(result).toBe('Project: Docs\nURL: https://docs.neodym.ai');
+    expect(result).toBe('');
   });
 });

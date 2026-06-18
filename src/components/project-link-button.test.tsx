@@ -31,14 +31,14 @@ describe('ProjectLinkButton', () => {
   it('copies credentials before opening the project so clipboard keeps focus permission', async () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
-      json: async () => ({ formatted: 'Project: Token Watcher\nPassword: secret' }),
+      json: async () => ({ formatted: 'neodym\ntokenwatch-dashboard-ashar-2026' }),
     } as Response);
 
     render(<ProjectLinkButton link={credentialLink} />);
 
     fireEvent.click(screen.getByRole('button', { name: /open & copy credentials/i }));
 
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith('Project: Token Watcher\nPassword: secret'));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith('neodym\ntokenwatch-dashboard-ashar-2026'));
     await waitFor(() => expect(open).toHaveBeenCalledWith(credentialLink.url, '_blank', 'noopener,noreferrer'));
 
     expect(writeText.mock.invocationCallOrder[0]).toBeLessThan(open.mock.invocationCallOrder[0]);
