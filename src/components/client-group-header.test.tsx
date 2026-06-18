@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ClientGroupHeader } from './client-group-header';
@@ -35,10 +35,38 @@ describe('ClientGroupHeader', () => {
     expect(titleRow).toContainElement(removeButton);
   });
 
-  it('does not show the remove client button for Internal Projects', () => {
+  it('does not show client management buttons for Internal Projects', () => {
     render(<ClientGroupHeader clientGroup={{ ...clientGroup, id: 'internal', name: 'Internal Projects', isInternal: true }} />);
 
     expect(screen.queryByRole('button', { name: /remove client/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /edit client/i })).not.toBeInTheDocument();
+  });
+
+  it('places an edit client button beside remove client with project edit styling', () => {
+    render(<ClientGroupHeader clientGroup={clientGroup} />);
+
+    const actions = screen.getByTestId('client-management-actions');
+    const editButton = within(actions).getByRole('button', { name: /edit client/i });
+    const removeButton = within(actions).getByRole('button', { name: /remove client/i });
+
+    expect(editButton).toHaveClass('border-blue-300/20');
+    expect(editButton).toHaveClass('text-blue-100');
+    expect(actions).toContainElement(removeButton);
+    expect(actions).toContainElement(editButton);
+  });
+
+  it('opens client edit details in a modal instead of inline details', () => {
+    render(<ClientGroupHeader clientGroup={{ ...clientGroup, description: 'Client description' }} />);
+
+    expect(screen.queryByText(/edit client details/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /edit client/i }));
+
+    const dialog = screen.getByRole('dialog', { name: /edit ease ip/i });
+    expect(within(dialog).getByLabelText(/client name/i)).toHaveValue('Ease IP');
+    expect(within(dialog).getByLabelText(/client niche/i)).toHaveValue('Medical');
+    expect(within(dialog).getByLabelText(/description/i)).toHaveValue('Client description');
+    expect(within(dialog).getByRole('button', { name: /update client/i })).toHaveClass('bg-blue-500');
   });
 
   it('disables the remove client button when the client still has projects', () => {
