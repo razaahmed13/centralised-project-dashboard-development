@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import {
   createClientGroupAction,
@@ -17,18 +18,26 @@ function DialogShell({
   children: React.ReactNode;
   onClose: () => void;
 }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm">
-      <section className="w-full max-w-xl rounded-[2rem] border border-blue-400/20 bg-slate-950 p-6 shadow-2xl shadow-blue-950/50">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-xl font-semibold text-white">{title}</h2>
+  const titleId = useId();
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/75 p-4 backdrop-blur-sm sm:items-center">
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-[2rem] border border-blue-400/20 bg-slate-950 p-5 shadow-2xl shadow-blue-950/50 sm:p-6"
+      >
+        <div className="sticky top-0 z-10 -mx-5 -mt-5 flex items-center justify-between gap-4 border-b border-slate-800/80 bg-slate-950/95 px-5 py-5 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6">
+          <h2 id={titleId} className="text-xl font-semibold text-white">{title}</h2>
           <button type="button" onClick={onClose} className="rounded-full border border-slate-700 px-3 py-1 text-sm text-slate-300 hover:border-blue-300/40">
             Close
           </button>
         </div>
         {children}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
