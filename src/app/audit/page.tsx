@@ -2,8 +2,11 @@ import { AppShell } from '@/components/app-shell';
 import { AuditLogTable } from '@/components/audit-log-table';
 import { getAuditLogs, type AuditLog } from '@/lib/audit';
 import { getClientGroupsForSidebar, type ClientGroup } from '@/lib/dashboard-data';
+import { requirePageSession } from '@/lib/session';
 
 export default async function AuditPage() {
+  await requirePageSession('/audit');
+
   let logs: AuditLog[] = [];
   let clientGroups: ClientGroup[] | undefined;
   let loadError: Error | null = null;

@@ -3,8 +3,11 @@ import { ClientGroupHeader } from '@/components/client-group-header';
 import { DashboardActions } from '@/components/dashboard-actions';
 import { ProjectCard } from '@/components/project-card';
 import { getDashboardData, type DashboardData } from '@/lib/dashboard-data';
+import { requirePageSession } from '@/lib/session';
 
 export default async function Home({ searchParams }: { searchParams?: Promise<{ client?: string }> }) {
+  await requirePageSession('/');
+
   const params = await searchParams;
   let data: DashboardData | null = null;
   let loadError: Error | null = null;
