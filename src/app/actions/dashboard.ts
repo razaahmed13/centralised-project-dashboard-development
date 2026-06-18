@@ -95,8 +95,16 @@ export async function deleteClientGroupAction(formData: FormData) {
   const group = await assertSupabase<{ id: string; name: string; is_internal: boolean }[]>(
     await supabase.from('client_groups').select('id,name,is_internal').eq('id', id).limit(1),
   );
+  const selectedGroup = group[0];
 
-  if (group[0]?.is_internal) throw new Error('Internal Projects cannot be deleted.');
+  if (!selectedGroup) throw new Error('Client group not found.');
+  if (selectedGroup.is_internal) throw new Error('Internal Projects cannot be deleted.');
+
+  const existingProjects = await assertSupabase<{ id: string }[]>(
+    await supabase.from('projects').select('id').eq('client_group_id', id).limit(1),
+  );
+
+  if (existingProjects.length > 0) throw new Error('Remove all projects before deleting this client.');
 
   await assertSupabase(await supabase.from('client_groups').delete().eq('id', id));
   await createAuditLog({
@@ -104,7 +112,7 @@ export async function deleteClientGroupAction(formData: FormData) {
     action: 'delete',
     entityType: 'client_group',
     entityId: id,
-    summary: `Deleted client group ${group[0]?.name ?? id}`,
+    summary: `Deleted client group ${selectedGroup.name}`,
   });
 
   revalidatePath('/');
