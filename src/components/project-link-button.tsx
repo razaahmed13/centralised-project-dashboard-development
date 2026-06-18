@@ -8,10 +8,15 @@ export function ProjectLinkButton({ link }: { link: ProjectLink }) {
   const [status, setStatus] = useState<string | null>(null);
   const [fallbackText, setFallbackText] = useState<string | null>(null);
 
-  async function openAndCopy() {
+  function openProject() {
     window.open(link.url, '_blank', 'noopener,noreferrer');
+  }
+
+  async function openAndCopy() {
+    setFallbackText(null);
 
     if (!link.hasCredentials) {
+      openProject();
       setStatus('Project opened. No credentials stored.');
       return;
     }
@@ -22,15 +27,18 @@ export function ProjectLinkButton({ link }: { link: ProjectLink }) {
       const payload = (await response.json()) as { formatted: string | null };
 
       if (!payload.formatted) {
+        openProject();
         setStatus('Project opened. No credentials stored.');
         return;
       }
 
       try {
         await navigator.clipboard.writeText(payload.formatted);
-        setStatus('Project opened. Credentials copied.');
+        openProject();
+        setStatus('Credentials copied. Project opened.');
       } catch {
         setFallbackText(payload.formatted);
+        openProject();
         setStatus('Project opened. Use manual copy below.');
       }
     } catch (error) {
