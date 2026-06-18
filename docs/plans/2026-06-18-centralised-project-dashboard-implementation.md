@@ -4,9 +4,9 @@
 
 **Goal:** Build a protected Neodym internal dashboard that organizes internal/client projects, stores project links and encrypted access notes/credentials, and lets authenticated admins open a project in a new tab while copying its credentials to clipboard.
 
-**Architecture:** Use a Next.js application deployed to Vercel, with a database abstraction that uses local SQLite for current local testing and can switch to hosted Supabase Postgres for deployment once Supabase is available. Authentication protects the entire app using two allowed mechanisms: Google OAuth for `hello@neodym.ai` initially, and a custom admin password fallback. Future Neodym Google accounts can be allowed by adding them to an allowlist. Sensitive credentials/access notes are encrypted server-side before storage and decrypted only for authenticated admin actions.
+**Architecture:** Use a Next.js application deployed to Vercel, backed by hosted Supabase Postgres. Authentication protects the entire app using two allowed mechanisms: Google OAuth for `hello@neodym.ai` initially, and a custom admin password fallback. Future Neodym Google accounts can be allowed by adding them to an allowlist. Sensitive credentials/access notes are encrypted server-side before storage and decrypted only for authenticated admin actions.
 
-**Tech Stack:** Next.js App Router, TypeScript, Tailwind CSS, Prisma with local SQLite for development/testing, Supabase Postgres for eventual deployment, Auth.js/NextAuth for Google OAuth, server-side password hashing, Vercel hosting, Vitest/React Testing Library/Playwright.
+**Tech Stack:** Next.js App Router, TypeScript, Tailwind CSS, Supabase Postgres, Supabase client/migrations or Prisma configured for Supabase Postgres, Auth.js/NextAuth for Google OAuth, server-side password hashing, Vercel hosting, Vitest/React Testing Library/Playwright.
 
 ---
 
@@ -34,8 +34,7 @@
   - Copies username/password/access notes to clipboard in the same click handler.
   - Shows success/error toast.
   - If clipboard copy fails, shows a secure fallback modal with manual copy buttons.
-- Local SQLite database for current local development/testing while Supabase has issues.
-- Keep the schema and data-access layer portable so it can migrate to hosted Supabase Postgres for deployment.
+- Hosted Supabase Postgres for local testing and deployable persistent storage.
 - Vercel deployment first; Railway only if Vercel is unavailable.
 - Seed/demo data for local verification.
 
@@ -55,7 +54,7 @@
 - True one-click authorization into arbitrary external tools is not reliable because browser security prevents one website from controlling another website's login fields or cookies.
 - MVP will implement the practical version: open the project and copy credentials/access notes automatically on user click.
 - For Neodym-owned tools, future improvement can add central dashboard auth verification or signed one-time login links.
-- Credentials are sensitive. They must never be stored as plaintext. Store encrypted values in the active database — local SQLite during development, Supabase Postgres for deployment — and decrypt only on authenticated server routes.
+- Credentials are sensitive. They must never be stored as plaintext. Store encrypted values in Supabase Postgres and decrypt only on authenticated server routes.
 
 ---
 
@@ -73,12 +72,11 @@
 
 ## Database Strategy
 
-- Use **Prisma + SQLite** for local testing right now because Supabase is temporarily unavailable/problematic.
-- Keep table names, field names, and relations compatible with a later **Supabase Postgres** migration.
-- Avoid SQLite-only behavior in application logic. Use Prisma models and repository/data-access functions instead of raw database-specific SQL wherever possible.
-- Store local SQLite at `prisma/dev.db` or another ignored local path. Do not commit local DB files.
-- When Supabase is ready, add a Postgres/Supabase migration path and verify the same app code works by changing `DATABASE_URL`.
-- Supabase remains the deployment target for persistent production data.
+- Use **hosted Supabase Postgres** for local testing and eventual production deployment.
+- Keep all database credentials/server keys server-side.
+- Prefer Supabase SQL migrations or Prisma configured against Supabase Postgres; choose one approach and keep it consistent.
+- Supabase is the source of truth for persistent data across development, testing, and deployment.
+- Do not commit `.env` files or any exported credential data.
 
 ---
 
@@ -159,9 +157,9 @@ Fields:
 
 ## Security Rules
 
-- Store database credentials/server keys only server-side. For local SQLite, keep the DB file outside committed files. For Supabase later, keep the service role key server-side and never expose it to browser code.
-- Store encryption secret as `CREDENTIAL_ENCRYPTION_KEY` in local `.env` and later Vercel env vars.
-- Encrypt credential fields before writing to SQLite or Supabase.
+- Store Supabase credentials/server keys only server-side. Keep the service role key server-side and never expose it to browser code.
+- Store encryption secret as `CREDENTIAL_ENCRYPTION_KEY` in local `.env` and Vercel env vars.
+- Encrypt credential fields before writing to Supabase.
 - Decrypt credentials only in authenticated server actions/API routes.
 - Never return all credentials during normal dashboard list loading.
 - Fetch/decrypt credentials only when user clicks **Open & Copy Credentials** or opens credential edit modal.
@@ -182,20 +180,17 @@ GOOGLE_CLIENT_SECRET=...
 ALLOWED_GOOGLE_EMAILS=hello@neodym.ai
 ADMIN_PASSWORD_HASH=...
 CREDENTIAL_ENCRYPTION_KEY=...
-DATABASE_URL=file:./dev.db
-# Later Supabase deployment values:
-# DATABASE_URL=postgresql://...
-# SUPABASE_URL=...
-# SUPABASE_SERVICE_ROLE_KEY=...
-# SUPABASE_ANON_KEY=...
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+SUPABASE_ANON_KEY=...
+DATABASE_URL=postgresql://...
 ```
 
 Notes:
 
 - `ADMIN_PASSWORD_HASH` should be generated from the selected password using bcrypt/argon2.
 - `CREDENTIAL_ENCRYPTION_KEY` should be a high-entropy key generated once and stored only in environment variables.
-- For local testing, `DATABASE_URL` points to SQLite, e.g. `file:./dev.db`.
-- For deployment, `DATABASE_URL` should switch to Supabase Postgres.
+- `DATABASE_URL` should point to the hosted Supabase Postgres connection string when using Prisma or direct SQL tooling.
 
 ---
 
@@ -216,7 +211,7 @@ Notes:
 **Steps:**
 
 1. Initialize a Next.js TypeScript app in the current repo.
-2. Install Tailwind CSS, testing dependencies, auth dependencies, Prisma/SQLite tooling, and encryption/hash libraries.
+2. Install Tailwind CSS, testing dependencies, auth dependencies, Supabase client/database tooling, and encryption/hash libraries.
 3. Create a simple placeholder protected dashboard page.
 4. Run `npm run lint` and `npm run build`.
 5. Commit: `chore: initialize Next.js dashboard app`.
@@ -257,13 +252,12 @@ Notes:
 
 ---
 
-### Task 3: Configure local SQLite schema with Supabase-ready Prisma models
+### Task 3: Configure Supabase schema/migrations
 
-**Objective:** Add a local SQLite development schema for client groups, projects, links, credentials, and audit logs while keeping the model portable to Supabase Postgres.
+**Objective:** Add Supabase Postgres schema for client groups, projects, links, credentials, and audit logs.
 
 **Files:**
-- Create: `prisma/schema.prisma`
-- Create: `prisma/seed.ts`
+- Create: `supabase/migrations/001_initial_schema.sql` or Prisma migration files configured for Supabase Postgres
 - Create: `src/lib/db.ts`
 - Create: `docs/database-schema.md`
 
@@ -273,19 +267,17 @@ Notes:
 2. Add cascade delete rules carefully:
    - deleting a client group deletes its projects/links/credentials, except protect the built-in `Internal Projects` group from accidental deletion
    - deleting a link deletes its credential record
-3. Use Prisma-managed timestamps (`createdAt`, `updatedAt`) instead of database-specific triggers for portability.
+3. Add timestamp update triggers if using raw SQL, or equivalent ORM-managed timestamps if using Prisma.
 4. Add seed value for the default client group: `Internal Projects` with `is_internal=true`.
-5. Ensure SQLite DB files are ignored in `.gitignore`.
-6. Document schema and note the future Supabase Postgres migration path.
-7. Run `npx prisma migrate dev` and `npx prisma db seed` locally.
-8. Commit: `feat: add dashboard database schema`.
+5. Document schema.
+6. Run migration against the hosted Supabase project.
+7. Commit: `feat: add dashboard database schema`.
 
 **Verification:**
 
-- Local Prisma migration runs successfully against SQLite.
-- Local SQLite DB is created but not committed.
+- Migration runs successfully against Supabase.
+- Tables are visible in Supabase.
 - Seed `Internal Projects` client group exists.
-- Schema avoids SQLite-only assumptions so it can move to Supabase Postgres later.
 
 ---
 
@@ -508,7 +500,7 @@ Notes:
    - access notes
    - owner/team member source
 2. Create JSON import format.
-3. Implement script that validates and imports projects into the active local Prisma database; keep the import logic database-agnostic for later Supabase Postgres use.
+3. Implement script that validates and imports projects into Supabase.
 4. Encrypt credentials during import.
 5. Add dry-run mode.
 6. Commit: `feat: add project data import workflow`.
@@ -543,9 +535,9 @@ Notes:
 
 ---
 
-### Task 12: Add local setup and future deployment configuration
+### Task 12: Add setup and deployment configuration
 
-**Objective:** Prepare the app for local SQLite testing now and Vercel/Supabase deployment later.
+**Objective:** Prepare the app for local development with hosted Supabase and Vercel deployment.
 
 **Files:**
 - Create: `.env.example`
@@ -557,17 +549,15 @@ Notes:
 
 1. Document all required environment variables.
 2. Add setup instructions for Google OAuth credentials.
-3. Add setup instructions for local SQLite/Prisma migration and seed commands.
-4. Add future setup instructions for Supabase connection once Supabase is available.
-5. Add build/test scripts.
-6. Add Vercel deploy notes.
-7. Commit: `docs: add setup and deployment instructions`.
+3. Add setup instructions for Supabase connection, migration, and seed commands.
+4. Add build/test scripts.
+5. Add Vercel deploy notes.
+6. Commit: `docs: add setup and deployment instructions`.
 
 **Verification:**
 
-- New developer can follow README to run locally using SQLite.
+- New developer can follow README to run locally using the hosted Supabase project.
 - `npm run build` works with required env vars.
-- README clearly states Supabase is the eventual production DB target.
 
 ---
 
@@ -637,7 +627,7 @@ Notes:
 1. Create Vercel project from GitHub repo.
 2. Add all production environment variables.
 3. Configure Google OAuth callback URL for production domain.
-4. Configure Supabase production DB connection once Supabase is available, migrating from the local Prisma schema.
+4. Configure Supabase production DB connection.
 5. Deploy.
 6. Open production dashboard in browser.
 7. Verify login works.
@@ -691,5 +681,5 @@ If external tools require smoother credential entry, consider:
 - Credentials are encrypted at rest.
 - Clicking **Open & Copy Credentials** opens the project in a new tab and copies credentials when browser permission allows.
 - Clipboard failure has a clear manual fallback.
-- App runs locally with SQLite now and remains ready to deploy to Vercel with Supabase Postgres later.
-- README documents local SQLite setup, future Supabase setup, Google OAuth setup, and deployment.
+- App uses hosted Supabase Postgres and deploys cleanly to Vercel.
+- README documents Supabase setup, Google OAuth setup, local development, and deployment.
