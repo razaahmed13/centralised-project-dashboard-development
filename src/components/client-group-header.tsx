@@ -47,10 +47,35 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function DeleteClientConfirmation({ clientGroup, onCancel }: { clientGroup: ClientGroup; onCancel: () => void }) {
+  const titleId = useId();
+
+  return (
+    <div role="alertdialog" aria-modal="false" aria-labelledby={titleId} className="mt-4 rounded-3xl border border-red-400/20 bg-slate-950/90 p-4 shadow-xl shadow-red-950/20">
+      <h4 id={titleId} className="text-sm font-semibold text-white">
+        Delete {clientGroup.name}
+      </h4>
+      <p className="mt-2 text-sm text-slate-300">Delete {clientGroup.name}? This cannot be undone.</p>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <form action={deleteClientGroupAction}>
+          <input type="hidden" name="clientGroupId" value={clientGroup.id} />
+          <button type="submit" className="rounded-full border border-red-400/25 px-4 py-2 text-sm font-semibold text-red-300 hover:bg-red-500/10">
+            Confirm
+          </button>
+        </form>
+        <button type="button" onClick={onCancel} className="rounded-full border border-emerald-400/25 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10">
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ClientGroupHeader({ clientGroup }: { clientGroup: ClientGroup }) {
   const canManageClient = !clientGroup.isInternal;
   const hasProjects = clientGroup.projects.length > 0;
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   async function closeAfterUpdate(formData: FormData) {
     await updateClientGroupAction(formData);
@@ -67,21 +92,21 @@ export function ClientGroupHeader({ clientGroup }: { clientGroup: ClientGroup })
             <button type="button" onClick={() => setIsEditOpen(true)} className={secondaryButtonClass}>
               Edit Client
             </button>
-            <form action={deleteClientGroupAction}>
-              <input type="hidden" name="clientGroupId" value={clientGroup.id} />
-              <button
-                type="submit"
-                disabled={hasProjects}
-                title={hasProjects ? 'Remove all projects in this client before deleting the client.' : 'Remove this client'}
-                className={dangerButtonClass}
-              >
-                <span>Remove Client</span>
-              </button>
-            </form>
+            <button
+              type="button"
+              disabled={hasProjects}
+              title={hasProjects ? 'Remove all projects in this client before deleting the client.' : 'Remove this client'}
+              onClick={() => setIsDeleteOpen(true)}
+              className={dangerButtonClass}
+            >
+              <span>Remove Client</span>
+            </button>
           </div>
         ) : null}
       </div>
       {clientGroup.description ? <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">{clientGroup.description}</p> : null}
+
+      {isDeleteOpen ? <DeleteClientConfirmation clientGroup={clientGroup} onCancel={() => setIsDeleteOpen(false)} /> : null}
 
       {isEditOpen ? (
         <DialogShell title={`Edit ${clientGroup.name}`} onClose={() => setIsEditOpen(false)}>

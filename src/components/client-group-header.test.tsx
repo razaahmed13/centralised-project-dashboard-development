@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { deleteClientGroupAction } from '@/app/actions/dashboard';
+
 import { ClientGroupHeader } from './client-group-header';
 
 vi.mock('@/app/actions/dashboard', () => ({
@@ -27,7 +29,6 @@ describe('ClientGroupHeader', () => {
     expect(removeButton).toHaveClass('border-red-500/20');
     expect(removeButton).toHaveClass('text-red-300');
     expect(removeButton).not.toBeDisabled();
-    expect(removeButton.closest('form')?.querySelector('input[name="clientGroupId"]')).toHaveValue('client-1');
 
     const titleRow = screen.getByTestId('client-title-row');
     expect(titleRow).toHaveClass('justify-between');
@@ -91,5 +92,20 @@ describe('ClientGroupHeader', () => {
     );
 
     expect(screen.getByRole('button', { name: /remove client/i })).toBeDisabled();
+  });
+
+  it('opens an app-styled confirmation alert before deleting a client', () => {
+    vi.mocked(deleteClientGroupAction).mockResolvedValue(undefined);
+    render(<ClientGroupHeader clientGroup={clientGroup} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /remove client/i }));
+
+    const alert = screen.getByRole('alertdialog', { name: /delete ease ip/i });
+    expect(alert).toHaveTextContent('Delete Ease IP? This cannot be undone.');
+    expect(within(alert).getByRole('button', { name: /confirm/i })).toHaveClass('text-red-300');
+    expect(within(alert).getByRole('button', { name: /cancel/i })).toHaveClass('text-emerald-300');
+
+    fireEvent.click(within(alert).getByRole('button', { name: /cancel/i }));
+    expect(screen.queryByRole('alertdialog', { name: /delete ease ip/i })).not.toBeInTheDocument();
   });
 });

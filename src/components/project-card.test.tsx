@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { deleteProjectAction, updateProjectAction } from '@/app/actions/dashboard';
@@ -71,7 +71,7 @@ describe('ProjectCard', () => {
     expect(showDetails).toHaveClass('text-blue-100');
   });
 
-  it('opens a read-only details dialog with link and copy buttons for username and password', async () => {
+  it('opens a read-only details dialog with clickable link and icon-only copy controls that turn into ticks', async () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
       json: async () => ({ hasCredentials: true, username: 'hello@neodym.ai', password: 'secret-pass', notes: 'Use workspace admin.' }),
@@ -85,11 +85,21 @@ describe('ProjectCard', () => {
     expect(screen.getByDisplayValue('hello@neodym.ai')).toHaveAttribute('readOnly');
     expect(screen.getByDisplayValue('secret-pass')).toHaveAttribute('readOnly');
 
-    fireEvent.click(screen.getByRole('button', { name: /copy username/i }));
-    fireEvent.click(screen.getByRole('button', { name: /copy password/i }));
+    const copyLink = screen.getByRole('button', { name: /copy project link/i });
+    const copyUsername = screen.getByRole('button', { name: /copy username/i });
+    const copyPassword = screen.getByRole('button', { name: /copy password/i });
+    expect(copyUsername).not.toHaveTextContent(/copy username/i);
+    expect(copyPassword).not.toHaveTextContent(/copy password/i);
 
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith('hello@neodym.ai'));
+    fireEvent.click(copyLink);
+    fireEvent.click(copyUsername);
+    fireEvent.click(copyPassword);
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith('https://token.neodym.ai'));
+    expect(writeText).toHaveBeenCalledWith('hello@neodym.ai');
     expect(writeText).toHaveBeenCalledWith('secret-pass');
+    expect(await screen.findByRole('button', { name: /copied username/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /copied password/i })).toBeInTheDocument();
   });
 
   it('shows edit and delete actions side by side below the separator without the old dropdown', () => {
@@ -115,12 +125,18 @@ describe('ProjectCard', () => {
     expect(screen.getByRole('button', { name: /update project/i })).toBeInTheDocument();
   });
 
-  it('asks for confirmation before deleting a project', () => {
-    confirm.mockReturnValue(false);
+  it('opens an app-styled confirmation alert before deleting a project', () => {
     render(<ProjectCard project={project} clientGroups={clientGroups} />);
 
-    fireEvent.submit(screen.getByRole('button', { name: /delete project/i }).closest('form')!);
+    fireEvent.click(screen.getByRole('button', { name: /delete project/i }));
 
-    expect(confirm).toHaveBeenCalledWith('Delete Token Watcher? This cannot be undone.');
+    expect(confirm).not.toHaveBeenCalled();
+    const alert = screen.getByRole('alertdialog', { name: /delete token watcher/i });
+    expect(alert).toHaveTextContent('Delete Token Watcher? This cannot be undone.');
+    expect(within(alert).getByRole('button', { name: /confirm/i })).toHaveClass('text-red-300');
+    expect(within(alert).getByRole('button', { name: /cancel/i })).toHaveClass('text-emerald-300');
+
+    fireEvent.click(within(alert).getByRole('button', { name: /cancel/i }));
+    expect(screen.queryByRole('alertdialog', { name: /delete token watcher/i })).not.toBeInTheDocument();
   });
 });

@@ -13,6 +13,8 @@ const secondaryButtonClass =
   'rounded-full border border-blue-300/20 px-4 py-2 text-sm font-semibold text-blue-100 transition hover:border-blue-300/50 hover:bg-blue-400/10 disabled:cursor-not-allowed disabled:opacity-60';
 const dangerButtonClass =
   'rounded-2xl border border-red-500/20 px-4 py-3 text-sm font-medium text-red-300 transition hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-200';
+const copyIconButtonClass =
+  'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-300/20 text-blue-100 transition hover:border-blue-300/50 hover:bg-blue-400/10';
 
 type CredentialDetails = {
   hasCredentials: boolean;
@@ -56,20 +58,71 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function ReadOnlyCopyField({ label, value, copyLabel }: { label: string; value: string; copyLabel: string }) {
+function CopyIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="9" y="9" width="10" height="12" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2">
+      <path d="m5 13 4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CopyIconButton({ label, value, copied, onCopy }: { label: string; value: string; copied: boolean; onCopy: (label: string, value: string) => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={copied ? `Copied ${label}` : `Copy ${label}`}
+      title={copied ? 'Copied' : `Copy ${label}`}
+      onClick={() => onCopy(label, value)}
+      className={`${copyIconButtonClass} ${copied ? 'border-emerald-300/30 text-emerald-300' : ''}`}
+    >
+      {copied ? <CheckIcon /> : <CopyIcon />}
+    </button>
+  );
+}
+
+function ReadOnlyCopyField({ label, value, copied, onCopy }: { label: string; value: string; copied: boolean; onCopy: (label: string, value: string) => void }) {
   return (
     <div>
       <label className="block text-sm font-medium text-slate-300">
         <span>{label}</span>
-        <input readOnly value={value} className={`${inputClass} mt-2`} />
+        <div className="mt-2 flex items-center gap-2">
+          <input readOnly value={value} className={inputClass} />
+          <CopyIconButton label={label.toLowerCase()} value={value} copied={copied} onCopy={onCopy} />
+        </div>
       </label>
-      <button
-        type="button"
-        onClick={() => navigator.clipboard.writeText(value)}
-        className="mt-2 rounded-full border border-blue-300/20 px-3 py-1 text-xs font-semibold text-blue-100 hover:border-blue-300/50 hover:bg-blue-400/10"
-      >
-        {copyLabel}
-      </button>
+    </div>
+  );
+}
+
+function DeleteConfirmation({ title, message, idName, idValue, onCancel }: { title: string; message: string; idName: string; idValue: string; onCancel: () => void }) {
+  const titleId = useId();
+
+  return (
+    <div role="alertdialog" aria-modal="false" aria-labelledby={titleId} className="mt-4 rounded-3xl border border-red-400/20 bg-slate-950/90 p-4 shadow-xl shadow-red-950/20">
+      <h4 id={titleId} className="text-sm font-semibold text-white">
+        {title}
+      </h4>
+      <p className="mt-2 text-sm text-slate-300">{message}</p>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <form action={deleteProjectAction}>
+          <input type="hidden" name={idName} value={idValue} />
+          <button type="submit" className="rounded-full border border-red-400/25 px-4 py-2 text-sm font-semibold text-red-300 hover:bg-red-500/10">
+            Confirm
+          </button>
+        </form>
+        <button type="button" onClick={onCancel} className="rounded-full border border-emerald-400/25 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10">
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }
@@ -79,6 +132,8 @@ export function ProjectCard({ project, clientGroups }: { project: Project; clien
   const [modal, setModal] = useState<'details' | 'edit' | null>(null);
   const [credentials, setCredentials] = useState<CredentialDetails | null>(null);
   const [credentialStatus, setCredentialStatus] = useState<string | null>(null);
+  const [copiedFields, setCopiedFields] = useState<string[]>([]);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   async function loadCredentials() {
     setCredentialStatus(null);
@@ -100,6 +155,7 @@ export function ProjectCard({ project, clientGroups }: { project: Project; clien
   }
 
   function openDetails() {
+    setCopiedFields([]);
     setModal('details');
     void loadCredentials();
   }
@@ -114,10 +170,9 @@ export function ProjectCard({ project, clientGroups }: { project: Project; clien
     setModal(null);
   }
 
-  function confirmDelete(event: React.FormEvent<HTMLFormElement>) {
-    if (!window.confirm(`Delete ${project.name}? This cannot be undone.`)) {
-      event.preventDefault();
-    }
+  async function copyValue(label: string, value: string) {
+    await navigator.clipboard.writeText(value);
+    setCopiedFields((fields) => (fields.includes(label) ? fields : [...fields, label]));
   }
 
   return (
@@ -148,34 +203,46 @@ export function ProjectCard({ project, clientGroups }: { project: Project; clien
         <button type="button" onClick={openEdit} className={secondaryButtonClass}>
           Edit project
         </button>
-        <form action={deleteProjectAction} onSubmit={confirmDelete}>
-          <input type="hidden" name="projectId" value={project.id} />
-          <button className={dangerButtonClass}>Delete project</button>
-        </form>
+        <button type="button" onClick={() => setIsDeleteOpen(true)} className={dangerButtonClass}>
+          Delete project
+        </button>
       </div>
+
+      {isDeleteOpen ? (
+        <DeleteConfirmation
+          title={`Delete ${project.name}`}
+          message={`Delete ${project.name}? This cannot be undone.`}
+          idName="projectId"
+          idValue={project.id}
+          onCancel={() => setIsDeleteOpen(false)}
+        />
+      ) : null}
 
       {modal === 'details' ? (
         <DialogShell title={`${project.name} Details`} onClose={() => setModal(null)}>
           <div className="mt-6 space-y-4">
-            <ReadOnlyCopyField label="Project name" value={project.name} copyLabel="Copy project name" />
+            <ReadOnlyCopyField label="Project name" value={project.name} copied={copiedFields.includes('project name')} onCopy={copyValue} />
             {primaryLink ? (
               <div>
                 <p className="text-sm font-medium text-slate-300">Project link</p>
-                <a href={primaryLink.url} target="_blank" rel="noreferrer" className="mt-2 block rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-blue-200 hover:border-blue-300/50">
-                  {primaryLink.url}
-                </a>
+                <div className="mt-2 flex items-center gap-2">
+                  <a href={primaryLink.url} target="_blank" rel="noreferrer" className="block min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-blue-200 hover:border-blue-300/50">
+                    {primaryLink.url}
+                  </a>
+                  <CopyIconButton label="project link" value={primaryLink.url} copied={copiedFields.includes('project link')} onCopy={copyValue} />
+                </div>
               </div>
             ) : null}
-            {project.description ? <ReadOnlyCopyField label="Description" value={project.description} copyLabel="Copy description" /> : null}
+            {project.description ? <ReadOnlyCopyField label="Description" value={project.description} copied={copiedFields.includes('description')} onCopy={copyValue} /> : null}
             {credentialStatus ? <p role="alert" className="rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-200">{credentialStatus}</p> : null}
             {!credentials && !credentialStatus ? <p className="text-sm text-slate-400">Loading credentials…</p> : null}
             {credentials?.hasCredentials ? (
               <div className="grid gap-4 sm:grid-cols-2">
-                {credentials.username ? <ReadOnlyCopyField label="Username" value={credentials.username} copyLabel="Copy username" /> : null}
-                {credentials.password ? <ReadOnlyCopyField label="Password" value={credentials.password} copyLabel="Copy password" /> : null}
+                {credentials.username ? <ReadOnlyCopyField label="Username" value={credentials.username} copied={copiedFields.includes('username')} onCopy={copyValue} /> : null}
+                {credentials.password ? <ReadOnlyCopyField label="Password" value={credentials.password} copied={copiedFields.includes('password')} onCopy={copyValue} /> : null}
               </div>
             ) : null}
-            {credentials?.notes ? <ReadOnlyCopyField label="Access notes" value={credentials.notes} copyLabel="Copy notes" /> : null}
+            {credentials?.notes ? <ReadOnlyCopyField label="Access notes" value={credentials.notes} copied={copiedFields.includes('access notes')} onCopy={copyValue} /> : null}
             {credentials && !credentials.hasCredentials ? <p className="rounded-2xl border border-slate-800 p-4 text-sm text-slate-400">No credentials stored for this project.</p> : null}
           </div>
         </DialogShell>
