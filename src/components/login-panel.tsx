@@ -3,9 +3,22 @@
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 
-export function LoginPanel() {
+type LoginPanelProps = {
+  authError?: string | null;
+};
+
+function getAuthErrorMessage(error?: string | null) {
+  if (error === 'CredentialsSignin') return 'Incorrect admin password.';
+  if (error === 'AccessDenied') return 'Google account not authorized.';
+  if (error) return 'Sign in failed. Please try again.';
+  return null;
+}
+
+export function LoginPanel({ authError }: LoginPanelProps = {}) {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const errorMessage = getAuthErrorMessage(authError);
+  const isPasswordError = authError === 'CredentialsSignin';
 
   async function submitPassword(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,6 +34,12 @@ export function LoginPanel() {
       <p className="mt-3 text-sm leading-6 text-slate-400">
         Use the authorized Google account or the shared admin password to access project links and credentials.
       </p>
+
+      {errorMessage && !isPasswordError ? (
+        <p role="alert" className="mt-5 rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-200">
+          {errorMessage}
+        </p>
+      ) : null}
 
       <button
         type="button"
@@ -42,7 +61,14 @@ export function LoginPanel() {
           onChange={(event) => setPassword(event.target.value)}
           className="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-blue-400"
           placeholder="Enter admin password"
+          aria-invalid={isPasswordError}
+          aria-describedby={isPasswordError ? 'admin-password-error' : undefined}
         />
+        {errorMessage && isPasswordError ? (
+          <p id="admin-password-error" role="alert" className="rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-200">
+            {errorMessage}
+          </p>
+        ) : null}
         <button
           type="submit"
           disabled={isSubmitting}
