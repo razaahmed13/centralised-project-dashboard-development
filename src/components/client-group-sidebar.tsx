@@ -2,6 +2,8 @@ import Link from 'next/link';
 
 import type { ClientGroup } from '@/lib/dashboard-data';
 
+import { LogoutButton } from './logout-button';
+
 const baseLinkClass = 'flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition';
 const activeLinkClass = 'border-blue-400/20 bg-blue-500/10 text-blue-100 shadow-lg shadow-blue-950/20';
 const inactiveLinkClass = 'border-transparent text-slate-400 hover:border-blue-300/20 hover:bg-blue-400/5 hover:text-slate-100';
@@ -44,17 +46,20 @@ export function ClientGroupSidebar({
         </nav>
       </div>
 
-      <Link
-        href="/audit"
-        className={[
-          'mt-6 flex shrink-0 items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition',
-          auditActive ? activeLinkClass : 'border-slate-800 text-slate-400 hover:border-blue-300/30 hover:text-blue-100',
-        ].join(' ')}
-        aria-current={auditActive ? 'page' : undefined}
-      >
-        <span>Audit Log</span>
-        {auditActive ? <span className="h-2 w-2 rounded-full bg-blue-300 shadow-[0_0_18px_rgba(59,130,246,0.9)]" /> : null}
-      </Link>
+      <div className="mt-6 shrink-0 space-y-3">
+        <Link
+          href="/audit"
+          className={[
+            'flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition',
+            auditActive ? activeLinkClass : 'border-slate-800 text-slate-400 hover:border-blue-300/30 hover:text-blue-100',
+          ].join(' ')}
+          aria-current={auditActive ? 'page' : undefined}
+        >
+          <span>Audit Log</span>
+          {auditActive ? <span className="h-2 w-2 rounded-full bg-blue-300 shadow-[0_0_18px_rgba(59,130,246,0.9)]" /> : null}
+        </Link>
+        <LogoutButton />
+      </div>
     </aside>
   );
 }

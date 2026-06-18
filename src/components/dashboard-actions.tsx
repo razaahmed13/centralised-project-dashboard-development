@@ -55,6 +55,16 @@ const inputClass = 'w-full rounded-2xl border border-slate-700 bg-slate-900 px-4
 export function DashboardActions({ clientGroups }: { clientGroups: ClientGroup[] }) {
   const [modal, setModal] = useState<'client' | 'project' | null>(null);
 
+  async function closeAfterCreateClient(formData: FormData) {
+    await createClientGroupAction(formData);
+    setModal(null);
+  }
+
+  async function closeAfterCreateProject(formData: FormData) {
+    await createProjectWithLinkAction(formData);
+    setModal(null);
+  }
+
   return (
     <>
       <button
@@ -74,7 +84,7 @@ export function DashboardActions({ clientGroups }: { clientGroups: ClientGroup[]
 
       {modal === 'client' ? (
         <DialogShell title="Add Client" onClose={() => setModal(null)}>
-          <form action={createClientGroupAction} className="mt-6 space-y-4">
+          <form action={closeAfterCreateClient} className="mt-6 space-y-4">
             <Field label="Client name">
               <input name="name" required className={inputClass} placeholder="Client name" />
             </Field>
@@ -93,7 +103,7 @@ export function DashboardActions({ clientGroups }: { clientGroups: ClientGroup[]
 
       {modal === 'project' ? (
         <DialogShell title="Add Project" onClose={() => setModal(null)}>
-          <form action={createProjectWithLinkAction} className="mt-6 space-y-4">
+          <form action={closeAfterCreateProject} className="mt-6 space-y-4">
             <Field label="Client">
               <select name="clientGroupId" required className={inputClass}>
                 {clientGroups.map((group) => (
