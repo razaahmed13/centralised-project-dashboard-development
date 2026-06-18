@@ -125,13 +125,16 @@ describe('ProjectCard', () => {
     expect(screen.getByRole('button', { name: /update project/i })).toBeInTheDocument();
   });
 
-  it('opens an app-styled confirmation alert before deleting a project', () => {
+  it('opens a separate modal confirmation alert before deleting a project', () => {
     render(<ProjectCard project={project} clientGroups={clientGroups} />);
 
     fireEvent.click(screen.getByRole('button', { name: /delete project/i }));
 
     expect(confirm).not.toHaveBeenCalled();
     const alert = screen.getByRole('alertdialog', { name: /delete token watcher/i });
+    expect(alert).toHaveAttribute('aria-modal', 'true');
+    expect(alert.parentElement?.parentElement).toBe(document.body);
+    expect(alert).toHaveClass('max-w-2xl');
     expect(alert).toHaveTextContent('Delete Token Watcher? This cannot be undone.');
     expect(within(alert).getByRole('button', { name: /confirm/i })).toHaveClass('text-red-300');
     expect(within(alert).getByRole('button', { name: /cancel/i })).toHaveClass('text-emerald-300');

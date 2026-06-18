@@ -94,13 +94,16 @@ describe('ClientGroupHeader', () => {
     expect(screen.getByRole('button', { name: /remove client/i })).toBeDisabled();
   });
 
-  it('opens an app-styled confirmation alert before deleting a client', () => {
+  it('opens a separate modal confirmation alert before deleting a client', () => {
     vi.mocked(deleteClientGroupAction).mockResolvedValue(undefined);
     render(<ClientGroupHeader clientGroup={clientGroup} />);
 
     fireEvent.click(screen.getByRole('button', { name: /remove client/i }));
 
     const alert = screen.getByRole('alertdialog', { name: /delete ease ip/i });
+    expect(alert).toHaveAttribute('aria-modal', 'true');
+    expect(alert.parentElement?.parentElement).toBe(document.body);
+    expect(alert).toHaveClass('max-w-2xl');
     expect(alert).toHaveTextContent('Delete Ease IP? This cannot be undone.');
     expect(within(alert).getByRole('button', { name: /confirm/i })).toHaveClass('text-red-300');
     expect(within(alert).getByRole('button', { name: /cancel/i })).toHaveClass('text-emerald-300');

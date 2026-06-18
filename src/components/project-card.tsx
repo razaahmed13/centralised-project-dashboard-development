@@ -106,24 +106,37 @@ function ReadOnlyCopyField({ label, value, copied, onCopy }: { label: string; va
 function DeleteConfirmation({ title, message, idName, idValue, onCancel }: { title: string; message: string; idName: string; idValue: string; onCancel: () => void }) {
   const titleId = useId();
 
-  return (
-    <div role="alertdialog" aria-modal="false" aria-labelledby={titleId} className="mt-4 rounded-3xl border border-red-400/20 bg-slate-950/90 p-4 shadow-xl shadow-red-950/20">
-      <h4 id={titleId} className="text-sm font-semibold text-white">
-        {title}
-      </h4>
-      <p className="mt-2 text-sm text-slate-300">{message}</p>
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <form action={deleteProjectAction}>
-          <input type="hidden" name={idName} value={idValue} />
-          <button type="submit" className="rounded-full border border-red-400/25 px-4 py-2 text-sm font-semibold text-red-300 hover:bg-red-500/10">
-            Confirm
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/75 p-4 backdrop-blur-sm sm:items-center">
+      <section
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="my-auto w-full max-w-2xl rounded-[2rem] border border-red-400/25 bg-slate-950 p-5 shadow-2xl shadow-red-950/40 sm:p-6"
+      >
+        <div className="flex items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+          <h2 id={titleId} className="text-xl font-semibold text-white">
+            {title}
+          </h2>
+          <button type="button" onClick={onCancel} className="rounded-full border border-slate-700 px-3 py-1 text-sm text-slate-300 hover:border-red-300/40">
+            Close
           </button>
-        </form>
-        <button type="button" onClick={onCancel} className="rounded-full border border-emerald-400/25 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10">
-          Cancel
-        </button>
-      </div>
-    </div>
+        </div>
+        <p className="mt-5 text-sm text-slate-300">{message}</p>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <form action={deleteProjectAction}>
+            <input type="hidden" name={idName} value={idValue} />
+            <button type="submit" className="rounded-full border border-red-400/25 px-4 py-2 text-sm font-semibold text-red-300 hover:bg-red-500/10">
+              Confirm
+            </button>
+          </form>
+          <button type="button" onClick={onCancel} className="rounded-full border border-emerald-400/25 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10">
+            Cancel
+          </button>
+        </div>
+      </section>
+    </div>,
+    document.body,
   );
 }
 
