@@ -68,5 +68,5 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     summary: `Credentials accessed for ${projectName ?? link.label}`,
   });
 
-  return NextResponse.json({ hasCredentials: true, formatted });
+  return NextResponse.json({ hasCredentials: true, formatted, username, password, notes });
 }
