@@ -74,6 +74,18 @@ describe('AppShell', () => {
     expect(screen.getByRole('main')).toHaveClass('lg:ml-72');
   });
 
+  it('keeps the topbar fixed while content scrolls and offsets page content below it', () => {
+    render(
+      <AppShell>
+        <div>Dashboard content</div>
+      </AppShell>,
+    );
+
+    expect(screen.getByRole('banner')).toHaveClass('fixed');
+    expect(screen.getByRole('banner')).toHaveClass('lg:left-72');
+    expect(screen.getByText(/dashboard content/i).parentElement).toHaveClass('pt-32');
+  });
+
   it('logs out to the login page from the persistent sidebar button', () => {
     render(
       <AppShell>

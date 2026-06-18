@@ -36,7 +36,7 @@ export function AppShell({
         <ClientGroupSidebar clientGroups={clientGroups} selectedClientGroupId={selectedClientGroupId} auditActive={auditActive} />
         <main className="flex min-w-0 flex-1 flex-col lg:ml-72">
           <Topbar actions={topbarActions} />
-          <div className="flex-1 p-5 sm:p-8 lg:p-10">{children}</div>
+          <div className="flex-1 px-5 pb-5 pt-32 sm:px-8 sm:pb-8 lg:px-10 lg:pb-10">{children}</div>
         </main>
       </div>
     </div>

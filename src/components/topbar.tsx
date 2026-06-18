@@ -1,6 +1,6 @@
 export function Topbar({ actions }: { actions?: React.ReactNode }) {
   return (
-    <header className="sticky top-0 z-10 border-b border-blue-400/10 bg-slate-950/55 px-5 py-4 backdrop-blur-xl sm:px-8 lg:px-10">
+    <header className="fixed inset-x-0 top-0 z-10 border-b border-blue-400/10 bg-slate-950/80 px-5 py-4 backdrop-blur-xl sm:px-8 lg:left-72 lg:px-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.28em] text-blue-300/70">Neodym Dashboard</p>
