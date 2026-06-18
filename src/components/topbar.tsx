@@ -3,8 +3,10 @@ export function Topbar({ actions }: { actions?: React.ReactNode }) {
     <header className="fixed inset-x-0 top-0 z-10 border-b border-blue-400/10 bg-slate-950/80 px-5 py-4 backdrop-blur-xl sm:px-8 lg:left-72 lg:px-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-blue-300/70">Neodym Dashboard</p>
-          <h2 className="mt-1 text-lg font-semibold text-white">Project command center</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-white">
+            Neodym<span className="text-blue-400">.</span>{' '}
+            <span className="font-normal text-slate-400">Project Dashboard</span>
+          </h2>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {actions ?? (
