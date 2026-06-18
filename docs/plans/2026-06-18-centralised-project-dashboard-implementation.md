@@ -476,43 +476,7 @@ Notes:
 
 ---
 
-### Task 10: Add seed/import workflow for initial project data
-
-**Objective:** Make it easy to load initial Neodym/client project links collected from Ibrahim, Asher, and Hamza.
-
-**Files:**
-- Create: `docs/project-link-intake-template.md`
-- Create: `scripts/import-projects.ts`
-- Create: `data/example-projects.json`
-
-**Steps:**
-
-1. Create an intake template with required fields:
-   - client group name (`Internal Projects` or client name)
-   - client niche/industry when creating a new client group
-   - client short description when creating a new client group
-   - project name
-   - project description
-   - link label
-   - URL
-   - username
-   - password
-   - access notes
-   - owner/team member source
-2. Create JSON import format.
-3. Implement script that validates and imports projects into Supabase.
-4. Encrypt credentials during import.
-5. Add dry-run mode.
-6. Commit: `feat: add project data import workflow`.
-
-**Verification:**
-
-- Dry-run prints planned inserts without writing.
-- Import creates client groups/projects/links/credentials correctly.
-
----
-
-### Task 11: Add audit log UI
+### Task 10: Add audit log UI
 
 **Objective:** Provide a simple admin view for recent changes and credential-copy events.
 
@@ -535,7 +499,7 @@ Notes:
 
 ---
 
-### Task 12: Add setup and deployment configuration
+### Task 11: Add setup and deployment configuration
 
 **Objective:** Prepare the app for local development with hosted Supabase and Vercel deployment.
 
@@ -549,7 +513,7 @@ Notes:
 
 1. Document all required environment variables.
 2. Add setup instructions for Google OAuth credentials.
-3. Add setup instructions for Supabase connection, migration, and seed commands.
+3. Add setup instructions for Supabase connection and migration commands. Note that only the built-in `Internal Projects` client group is seeded automatically; all real clients/projects are added manually through the dashboard.
 4. Add build/test scripts.
 5. Add Vercel deploy notes.
 6. Commit: `docs: add setup and deployment instructions`.
@@ -561,7 +525,7 @@ Notes:
 
 ---
 
-### Task 13: End-to-end testing
+### Task 12: End-to-end testing
 
 **Objective:** Verify the full MVP flow in browser automation.
 
@@ -576,7 +540,7 @@ Notes:
 1. Add Playwright.
 2. Mock or seed auth session for protected route tests.
 3. Test login page renders.
-4. Test dashboard tree renders seeded data.
+4. Test dashboard tree renders the built-in `Internal Projects` group and manually created client/project data.
 5. Test create/edit/delete project flow.
 6. Test open-and-copy fallback path.
 7. Commit: `test: add dashboard e2e coverage`.
@@ -587,7 +551,7 @@ Notes:
 
 ---
 
-### Task 14: Production readiness pass
+### Task 13: Production readiness pass
 
 **Objective:** Confirm security, reliability, and UX before deployment.
 
