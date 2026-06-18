@@ -132,6 +132,20 @@ async function selectOrThrow<T>(query: { data: T | null; error: { message: strin
   return query.data as T;
 }
 
+export async function getClientGroupsForSidebar(): Promise<ClientGroup[]> {
+  const supabase = getSupabaseAdminClient();
+  const clientGroups = await selectOrThrow<RawClientGroup[]>(
+    await supabase
+      .from('client_groups')
+      .select('id,name,slug,niche,description,is_internal,sort_order')
+      .order('is_internal', { ascending: false })
+      .order('sort_order')
+      .order('name'),
+  );
+
+  return mapDashboardRows({ clientGroups, projects: [], links: [] }).clientGroups;
+}
+
 export async function getDashboardData(selectedClientGroupId?: string | null): Promise<DashboardData> {
   const supabase = getSupabaseAdminClient();
 
