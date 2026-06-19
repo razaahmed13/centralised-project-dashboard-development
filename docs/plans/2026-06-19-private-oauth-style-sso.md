@@ -225,7 +225,7 @@ Behavior:
 3. Ensure client is active.
 4. Ensure `redirect_uri` exactly matches one of the allowed redirect URIs.
 5. Check dashboard session using NextAuth.
-6. If not logged in, redirect to dashboard login with a callback back to the full authorize URL.
+6. If not logged in, redirect back to the registered client's `fallback_login_uri` with `error=login_required` and the original `state`.
 7. If logged in, create a one-time random code.
 8. Hash and store the code in `sso_authorization_codes`.
 9. Redirect back to `redirect_uri` with:
@@ -260,9 +260,10 @@ export async function GET(request: NextRequest) {
 
   const session = await getServerSession(authOptions);
   if (!session) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('callbackUrl', `/auth/authorize${url.search}`);
-    return NextResponse.redirect(loginUrl);
+    const fallbackUrl = new URL(client.fallback_login_uri);
+    fallbackUrl.searchParams.set('error', 'login_required');
+    fallbackUrl.searchParams.set('state', state);
+    return NextResponse.redirect(fallbackUrl);
   }
 
   const code = generateRandomCode();
@@ -672,12 +673,10 @@ Dashboard sees user is not logged in.
 Redirects to:
 
 ```text
-GET https://dashboard.neodym.ai/login?callbackUrl=/auth/authorize...
+GET https://tokenwatcher.neodym.ai/login?error=login_required&state=abc123
 ```
 
-User logs in.
-
-Dashboard resumes authorize request and redirects back:
+User logs into Token Watcher through its own login screen. When Token Watcher starts SSO again and the dashboard session exists, the dashboard redirects back:
 
 ```text
 GET https://tokenwatcher.neodym.ai/auth/callback?code=one-time-code&state=abc123

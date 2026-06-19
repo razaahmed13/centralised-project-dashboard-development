@@ -32,7 +32,7 @@ describe('GET /auth/authorize', () => {
     mocks.createSsoAuthorizationCode.mockResolvedValue(undefined);
   });
 
-  it('redirects unauthenticated users to dashboard login with the full authorize URL as callback', async () => {
+  it('redirects unauthenticated users back to the registered client fallback login URI', async () => {
     mocks.getServerSession.mockResolvedValue(null);
     const { GET } = await import('./route');
 
@@ -43,53 +43,50 @@ describe('GET /auth/authorize', () => {
     );
 
     expect(response.status).toBe(307);
-    const location = response.headers.get('location') ?? '';
-    expect(location).toContain('/login?callbackUrl=');
-    expect(decodeURIComponent(location)).toContain('/auth/authorize?client_id=token-watcher');
-  });
-
-  it('redirects silent unauthenticated requests back to the client fallback URI with login_required', async () => {
-    mocks.getServerSession.mockResolvedValue(null);
-    const { GET } = await import('./route');
-
-    const response = await GET(
-      new Request(
-        'https://dashboard.neodym.ai/auth/authorize?client_id=token-watcher&redirect_uri=https%3A%2F%2Ftokenwatcher.neodym.ai%2Fauth%2Fcallback&state=state-123&code_challenge=long-enough-pkce-challenge&code_challenge_method=S256&prompt=none&fallback_uri=https%3A%2F%2Ftokenwatcher.neodym.ai%2Flogin',
-      ),
-    );
-
-    expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe('https://tokenwatcher.neodym.ai/login?error=login_required&state=state-123');
     expect(mocks.createSsoAuthorizationCode).not.toHaveBeenCalled();
   });
 
-  it('uses the registered client fallback login URI for silent unauthenticated requests', async () => {
+  it('rejects unauthenticated requests when the registered client has no fallback login URI', async () => {
     mocks.getServerSession.mockResolvedValue(null);
+    mocks.getActiveSsoClient.mockResolvedValue({
+      client_id: 'token-watcher',
+      allowed_redirect_uris: ['https://tokenwatcher.neodym.ai/auth/callback'],
+      allowed_origins: ['https://tokenwatcher.neodym.ai'],
+      fallback_login_uri: null,
+    });
     const { GET } = await import('./route');
 
     const response = await GET(
       new Request(
-        'https://dashboard.neodym.ai/auth/authorize?client_id=token-watcher&redirect_uri=https%3A%2F%2Ftokenwatcher.neodym.ai%2Fauth%2Fcallback&state=state-123&code_challenge=long-enough-pkce-challenge&code_challenge_method=S256&prompt=none',
-      ),
-    );
-
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe('https://tokenwatcher.neodym.ai/login?error=login_required&state=state-123');
-    expect(mocks.createSsoAuthorizationCode).not.toHaveBeenCalled();
-  });
-
-  it('rejects silent fallback URIs outside the registered client origin', async () => {
-    mocks.getServerSession.mockResolvedValue(null);
-    const { GET } = await import('./route');
-
-    const response = await GET(
-      new Request(
-        'https://dashboard.neodym.ai/auth/authorize?client_id=token-watcher&redirect_uri=https%3A%2F%2Ftokenwatcher.neodym.ai%2Fauth%2Fcallback&state=state-123&code_challenge=long-enough-pkce-challenge&code_challenge_method=S256&prompt=none&fallback_uri=https%3A%2F%2Fevil.example%2Flogin',
+        'https://dashboard.neodym.ai/auth/authorize?client_id=token-watcher&redirect_uri=https%3A%2F%2Ftokenwatcher.neodym.ai%2Fauth%2Fcallback&state=state-123&code_challenge=long-enough-pkce-challenge&code_challenge_method=S256',
       ),
     );
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: 'invalid_fallback_uri' });
+    expect(mocks.createSsoAuthorizationCode).not.toHaveBeenCalled();
+  });
+
+  it('rejects registered fallback login URIs outside the registered client origin', async () => {
+    mocks.getServerSession.mockResolvedValue(null);
+    mocks.getActiveSsoClient.mockResolvedValue({
+      client_id: 'token-watcher',
+      allowed_redirect_uris: ['https://tokenwatcher.neodym.ai/auth/callback'],
+      allowed_origins: ['https://tokenwatcher.neodym.ai'],
+      fallback_login_uri: 'https://evil.example/login',
+    });
+    const { GET } = await import('./route');
+
+    const response = await GET(
+      new Request(
+        'https://dashboard.neodym.ai/auth/authorize?client_id=token-watcher&redirect_uri=https%3A%2F%2Ftokenwatcher.neodym.ai%2Fauth%2Fcallback&state=state-123&code_challenge=long-enough-pkce-challenge&code_challenge_method=S256',
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'invalid_fallback_uri' });
+    expect(mocks.createSsoAuthorizationCode).not.toHaveBeenCalled();
   });
 
   it('issues one-time code and redirects authenticated users back to the exact client redirect URI', async () => {

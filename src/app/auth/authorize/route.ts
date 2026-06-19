@@ -12,8 +12,6 @@ const authorizeSchema = z.object({
   state: z.string().min(8),
   code_challenge: z.string().min(16),
   code_challenge_method: z.literal('S256').default('S256'),
-  prompt: z.literal('none').optional(),
-  fallback_uri: z.string().url().optional(),
 });
 
 function getCodeTtlSeconds() {
@@ -59,17 +57,11 @@ export async function GET(request: Request) {
 
   const session = await getServerSession(authOptions);
   if (!session) {
-    if (parsed.data.prompt === 'none') {
-      const fallbackUri = parsed.data.fallback_uri ?? client.fallback_login_uri;
-      if (!fallbackUri || !isAllowedFallbackUri(client, parsed.data.redirect_uri, fallbackUri)) {
-        return NextResponse.json({ error: 'invalid_fallback_uri' }, { status: 400 });
-      }
-      return redirectToClientLoginRequired(fallbackUri, parsed.data.state);
+    const fallbackUri = client.fallback_login_uri;
+    if (!fallbackUri || !isAllowedFallbackUri(client, parsed.data.redirect_uri, fallbackUri)) {
+      return NextResponse.json({ error: 'invalid_fallback_uri' }, { status: 400 });
     }
-
-    const loginUrl = new URL('/login', url.origin);
-    loginUrl.searchParams.set('callbackUrl', `${url.pathname}${url.search}`);
-    return NextResponse.redirect(loginUrl);
+    return redirectToClientLoginRequired(fallbackUri, parsed.data.state);
   }
 
   const code = generateAuthorizationCode();
