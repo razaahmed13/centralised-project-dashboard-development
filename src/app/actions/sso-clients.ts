@@ -11,6 +11,7 @@ const ssoClientSchema = z.object({
   clientId: z.string().min(1).regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/),
   name: z.string().min(1),
   allowedRedirectUris: z.array(z.string().url()).min(1),
+  fallbackLoginUri: z.string().url(),
   allowedOrigins: z.array(z.string().url()).default([]),
   isActive: z.boolean().default(true),
 });
@@ -44,6 +45,7 @@ export async function createSsoClientAction(formData: FormData) {
     clientId: getString(formData, 'clientId'),
     name: getString(formData, 'name'),
     allowedRedirectUris: splitLines(getString(formData, 'allowedRedirectUris')),
+    fallbackLoginUri: getString(formData, 'fallbackLoginUri'),
     allowedOrigins: splitLines(getString(formData, 'allowedOrigins')),
     isActive: formData.get('isActive') === 'on',
   });
@@ -56,6 +58,7 @@ export async function createSsoClientAction(formData: FormData) {
         client_id: input.clientId,
         name: input.name,
         allowed_redirect_uris: input.allowedRedirectUris,
+        fallback_login_uri: input.fallbackLoginUri,
         allowed_origins: input.allowedOrigins,
         is_active: input.isActive,
       })

@@ -24,6 +24,7 @@ function formDataForClient() {
   formData.set('clientId', 'token-watcher');
   formData.set('name', 'Token Watcher');
   formData.set('allowedRedirectUris', 'https://tokenwatcher.neodym.ai/auth/callback\nhttp://localhost:3001/auth/callback');
+  formData.set('fallbackLoginUri', 'https://tokenwatcher.neodym.ai/login');
   formData.set('allowedOrigins', 'https://tokenwatcher.neodym.ai\nhttp://localhost:3001');
   formData.set('isActive', 'on');
   return formData;
@@ -50,6 +51,7 @@ describe('createSsoClientAction', () => {
       client_id: 'token-watcher',
       name: 'Token Watcher',
       allowed_redirect_uris: ['https://tokenwatcher.neodym.ai/auth/callback', 'http://localhost:3001/auth/callback'],
+      fallback_login_uri: 'https://tokenwatcher.neodym.ai/login',
       allowed_origins: ['https://tokenwatcher.neodym.ai', 'http://localhost:3001'],
       is_active: true,
     });

@@ -6,6 +6,7 @@ create table if not exists public.sso_clients (
   name text not null,
   client_secret_hash text,
   allowed_redirect_uris text[] not null default '{}',
+  fallback_login_uri text,
   allowed_origins text[] not null default '{}',
   is_active boolean not null default true,
   created_at timestamptz not null default now(),

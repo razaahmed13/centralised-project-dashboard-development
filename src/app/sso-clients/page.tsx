@@ -38,6 +38,12 @@ function ClientCard({ client }: { client: SsoClientAdminRow }) {
             {client.allowed_redirect_uris.map((uri) => <li key={uri}>{uri}</li>)}
           </ul>
         </div>
+        {client.fallback_login_uri ? (
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-blue-300/70">Fallback/Login URI</p>
+            <p className="mt-2 font-mono text-xs text-slate-300">{client.fallback_login_uri}</p>
+          </div>
+        ) : null}
         {client.allowed_origins.length > 0 ? (
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-blue-300/70">Origins</p>
@@ -85,6 +91,10 @@ export default async function SsoClientsPage() {
           <label className="space-y-2 text-sm text-slate-300 md:col-span-2">
             <span>Allowed redirect URIs, one per line</span>
             <textarea name="allowedRedirectUris" required rows={3} placeholder="https://tokenwatcher.neodym.ai/auth/callback" className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 font-mono text-sm text-white outline-none focus:border-blue-400" />
+          </label>
+          <label className="space-y-2 text-sm text-slate-300 md:col-span-2">
+            <span>Fallback/Login URI</span>
+            <input name="fallbackLoginUri" type="url" required placeholder="https://tokenwatcher.neodym.ai/login" className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 font-mono text-sm text-white outline-none focus:border-blue-400" />
           </label>
           <label className="space-y-2 text-sm text-slate-300 md:col-span-2">
             <span>Allowed origins, one per line</span>

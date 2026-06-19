@@ -10,6 +10,7 @@ export type SsoClient = {
   client_secret_hash?: string | null;
   allowed_redirect_uris: string[];
   allowed_origins: string[];
+  fallback_login_uri: string | null;
   is_active: boolean;
 };
 
@@ -40,7 +41,7 @@ export async function getActiveSsoClient(clientId: string): Promise<SsoClient> {
   const supabase = getSupabaseAdminClient();
   const result = await supabase
     .from('sso_clients')
-    .select('client_id,name,client_secret_hash,allowed_redirect_uris,allowed_origins,is_active')
+    .select('client_id,name,client_secret_hash,allowed_redirect_uris,allowed_origins,fallback_login_uri,is_active')
     .eq('client_id', clientId)
     .eq('is_active', true)
     .single();

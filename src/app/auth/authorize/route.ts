@@ -60,10 +60,11 @@ export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session) {
     if (parsed.data.prompt === 'none') {
-      if (!parsed.data.fallback_uri || !isAllowedFallbackUri(client, parsed.data.redirect_uri, parsed.data.fallback_uri)) {
+      const fallbackUri = parsed.data.fallback_uri ?? client.fallback_login_uri;
+      if (!fallbackUri || !isAllowedFallbackUri(client, parsed.data.redirect_uri, fallbackUri)) {
         return NextResponse.json({ error: 'invalid_fallback_uri' }, { status: 400 });
       }
-      return redirectToClientLoginRequired(parsed.data.fallback_uri, parsed.data.state);
+      return redirectToClientLoginRequired(fallbackUri, parsed.data.state);
     }
 
     const loginUrl = new URL('/login', url.origin);
