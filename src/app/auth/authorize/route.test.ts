@@ -24,6 +24,7 @@ describe('GET /auth/authorize', () => {
     mocks.getActiveSsoClient.mockResolvedValue({
       client_id: 'token-watcher',
       allowed_redirect_uris: ['https://tokenwatcher.neodym.ai/auth/callback'],
+      allowed_origins: ['https://tokenwatcher.neodym.ai'],
     });
     mocks.validateRedirectUri.mockReturnValue(true);
     mocks.generateAuthorizationCode.mockReturnValue('raw-one-time-code');
@@ -44,6 +45,35 @@ describe('GET /auth/authorize', () => {
     const location = response.headers.get('location') ?? '';
     expect(location).toContain('/login?callbackUrl=');
     expect(decodeURIComponent(location)).toContain('/auth/authorize?client_id=token-watcher');
+  });
+
+  it('redirects silent unauthenticated requests back to the client fallback URI with login_required', async () => {
+    mocks.getServerSession.mockResolvedValue(null);
+    const { GET } = await import('./route');
+
+    const response = await GET(
+      new Request(
+        'https://dashboard.neodym.ai/auth/authorize?client_id=token-watcher&redirect_uri=https%3A%2F%2Ftokenwatcher.neodym.ai%2Fauth%2Fcallback&state=state-123&code_challenge=long-enough-pkce-challenge&code_challenge_method=S256&prompt=none&fallback_uri=https%3A%2F%2Ftokenwatcher.neodym.ai%2Flogin',
+      ),
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('https://tokenwatcher.neodym.ai/login?error=login_required&state=state-123');
+    expect(mocks.createSsoAuthorizationCode).not.toHaveBeenCalled();
+  });
+
+  it('rejects silent fallback URIs outside the registered client origin', async () => {
+    mocks.getServerSession.mockResolvedValue(null);
+    const { GET } = await import('./route');
+
+    const response = await GET(
+      new Request(
+        'https://dashboard.neodym.ai/auth/authorize?client_id=token-watcher&redirect_uri=https%3A%2F%2Ftokenwatcher.neodym.ai%2Fauth%2Fcallback&state=state-123&code_challenge=long-enough-pkce-challenge&code_challenge_method=S256&prompt=none&fallback_uri=https%3A%2F%2Fevil.example%2Flogin',
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'invalid_fallback_uri' });
   });
 
   it('issues one-time code and redirects authenticated users back to the exact client redirect URI', async () => {

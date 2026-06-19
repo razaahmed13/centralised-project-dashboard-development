@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { authOptions } from '@/auth';
 import { generateAuthorizationCode } from '@/lib/sso/pkce';
-import { createSsoAuthorizationCode, getActiveSsoClient, validateRedirectUri } from '@/lib/sso/store';
+import { createSsoAuthorizationCode, getActiveSsoClient, type SsoClient, validateRedirectUri } from '@/lib/sso/store';
 
 const authorizeSchema = z.object({
   client_id: z.string().min(1),
@@ -12,11 +12,30 @@ const authorizeSchema = z.object({
   state: z.string().min(8),
   code_challenge: z.string().min(16),
   code_challenge_method: z.literal('S256').default('S256'),
+  prompt: z.literal('none').optional(),
+  fallback_uri: z.string().url().optional(),
 });
 
 function getCodeTtlSeconds() {
   const ttl = Number(process.env.SSO_CODE_TTL_SECONDS ?? '120');
   return Number.isFinite(ttl) && ttl > 0 ? ttl : 120;
+}
+
+function isAllowedFallbackUri(client: Pick<SsoClient, 'allowed_origins'>, redirectUri: string, fallbackUri: string) {
+  try {
+    const redirectOrigin = new URL(redirectUri).origin;
+    const fallbackOrigin = new URL(fallbackUri).origin;
+    return fallbackOrigin === redirectOrigin || client.allowed_origins.includes(fallbackOrigin);
+  } catch {
+    return false;
+  }
+}
+
+function redirectToClientLoginRequired(fallbackUri: string, state: string) {
+  const fallbackUrl = new URL(fallbackUri);
+  fallbackUrl.searchParams.set('error', 'login_required');
+  fallbackUrl.searchParams.set('state', state);
+  return NextResponse.redirect(fallbackUrl);
 }
 
 export async function GET(request: Request) {
@@ -40,6 +59,13 @@ export async function GET(request: Request) {
 
   const session = await getServerSession(authOptions);
   if (!session) {
+    if (parsed.data.prompt === 'none') {
+      if (!parsed.data.fallback_uri || !isAllowedFallbackUri(client, parsed.data.redirect_uri, parsed.data.fallback_uri)) {
+        return NextResponse.json({ error: 'invalid_fallback_uri' }, { status: 400 });
+      }
+      return redirectToClientLoginRequired(parsed.data.fallback_uri, parsed.data.state);
+    }
+
     const loginUrl = new URL('/login', url.origin);
     loginUrl.searchParams.set('callbackUrl', `${url.pathname}${url.search}`);
     return NextResponse.redirect(loginUrl);
