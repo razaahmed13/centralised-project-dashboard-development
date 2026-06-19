@@ -12,10 +12,12 @@ export function ClientGroupSidebar({
   clientGroups,
   selectedClientGroupId,
   auditActive = false,
+  ssoActive = false,
 }: {
   clientGroups: ClientGroup[];
   selectedClientGroupId?: string | null;
   auditActive?: boolean;
+  ssoActive?: boolean;
 }) {
   return (
     <aside className="hidden h-screen w-72 shrink-0 flex-col border-r border-blue-400/10 bg-slate-950/60 p-5 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:flex">
@@ -57,6 +59,17 @@ export function ClientGroupSidebar({
         >
           <span>Audit Log</span>
           {auditActive ? <span className="h-2 w-2 rounded-full bg-blue-300 shadow-[0_0_18px_rgba(59,130,246,0.9)]" /> : null}
+        </Link>
+        <Link
+          href="/sso-clients"
+          className={[
+            'flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition',
+            ssoActive ? activeLinkClass : 'border-slate-800 text-slate-400 hover:border-blue-300/30 hover:text-blue-100',
+          ].join(' ')}
+          aria-current={ssoActive ? 'page' : undefined}
+        >
+          <span>SSO Clients</span>
+          {ssoActive ? <span className="h-2 w-2 rounded-full bg-blue-300 shadow-[0_0_18px_rgba(59,130,246,0.9)]" /> : null}
         </Link>
         <LogoutButton />
       </div>
