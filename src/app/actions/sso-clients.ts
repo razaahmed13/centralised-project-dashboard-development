@@ -27,8 +27,9 @@ function splitLines(value: string) {
     .filter(Boolean);
 }
 
-async function assertSupabase(result: { error: { message: string } | null }) {
+async function assertSupabase<T>(result: { data: T | null; error: { message: string } | null }): Promise<T> {
   if (result.error) throw new Error(result.error.message);
+  return result.data as T;
 }
 
 export async function createSsoClientAction(formData: FormData) {
@@ -42,21 +43,25 @@ export async function createSsoClientAction(formData: FormData) {
   });
 
   const supabase = getSupabaseAdminClient();
-  await assertSupabase(
-    await supabase.from('sso_clients').insert({
-      client_id: input.clientId,
-      name: input.name,
-      allowed_redirect_uris: input.allowedRedirectUris,
-      allowed_origins: input.allowedOrigins,
-      is_active: input.isActive,
-    }),
+  const inserted = await assertSupabase<{ id: string }[]>(
+    await supabase
+      .from('sso_clients')
+      .insert({
+        client_id: input.clientId,
+        name: input.name,
+        allowed_redirect_uris: input.allowedRedirectUris,
+        allowed_origins: input.allowedOrigins,
+        is_active: input.isActive,
+      })
+      .select('id'),
   );
+  const ssoClientRowId = inserted[0]?.id;
 
   await createAuditLog({
     actor: session.user?.email ?? undefined,
     action: 'sso_client_created',
     entityType: 'sso_client',
-    entityId: input.clientId,
+    entityId: ssoClientRowId,
     summary: `Registered SSO client ${input.name}`,
   });
 

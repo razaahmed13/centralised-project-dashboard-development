@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   createAuditLog: vi.fn(),
   revalidatePath: vi.fn(),
   insert: vi.fn(),
+  select: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -31,7 +32,8 @@ describe('createSsoClientAction', () => {
     vi.clearAllMocks();
     mocks.requireAdminSession.mockResolvedValue({ user: { email: 'hello@neodym.ai' } });
     mocks.createAuditLog.mockResolvedValue(undefined);
-    mocks.insert.mockResolvedValue({ data: null, error: null });
+    mocks.select.mockResolvedValue({ data: [{ id: '11111111-1111-4111-8111-111111111111' }], error: null });
+    mocks.insert.mockReturnValue({ select: mocks.select });
     mocks.getSupabaseAdminClient.mockReturnValue({
       from: vi.fn(() => ({ insert: mocks.insert })),
     });
@@ -47,11 +49,12 @@ describe('createSsoClientAction', () => {
       allowed_origins: ['https://tokenwatcher.neodym.ai', 'http://localhost:3001'],
       is_active: true,
     });
+    expect(mocks.select).toHaveBeenCalledWith('id');
     expect(mocks.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       actor: 'hello@neodym.ai',
       action: 'sso_client_created',
       entityType: 'sso_client',
-      entityId: 'token-watcher',
+      entityId: '11111111-1111-4111-8111-111111111111',
     }));
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/sso-clients');
   });
