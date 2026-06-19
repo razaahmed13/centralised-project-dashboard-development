@@ -1,4 +1,4 @@
-import { createSsoClientAction } from '@/app/actions/sso-clients';
+import { createSsoClientAction, updateSsoClientStatusAction } from '@/app/actions/sso-clients';
 import { AppShell } from '@/components/app-shell';
 import { getClientGroupsForSidebar, type ClientGroup } from '@/lib/dashboard-data';
 import { requirePageSession } from '@/lib/session';
@@ -12,9 +12,24 @@ function ClientCard({ client }: { client: SsoClientAdminRow }) {
           <h2 className="text-lg font-semibold text-white">{client.name}</h2>
           <p className="mt-1 font-mono text-xs text-blue-200">{client.client_id}</p>
         </div>
-        <span className={client.is_active ? 'rounded-full bg-emerald-400/10 px-3 py-1 text-xs text-emerald-200' : 'rounded-full bg-slate-700/60 px-3 py-1 text-xs text-slate-300'}>
-          {client.is_active ? 'Active' : 'Disabled'}
-        </span>
+        <div className="flex flex-col items-end gap-3">
+          <span className={client.is_active ? 'rounded-full bg-emerald-400/10 px-3 py-1 text-xs text-emerald-200' : 'rounded-full bg-slate-700/60 px-3 py-1 text-xs text-slate-300'}>
+            {client.is_active ? 'Active' : 'Disabled'}
+          </span>
+          <form action={updateSsoClientStatusAction}>
+            <input type="hidden" name="clientId" value={client.id} />
+            <input type="hidden" name="clientName" value={client.name} />
+            <input type="hidden" name="isActive" value={client.is_active ? 'false' : 'true'} />
+            <button
+              type="submit"
+              className={client.is_active
+                ? 'rounded-2xl border border-rose-300/30 px-4 py-2 text-xs font-semibold text-rose-100 transition hover:bg-rose-400/10'
+                : 'rounded-2xl border border-emerald-300/30 px-4 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-400/10'}
+            >
+              {client.is_active ? 'Disable client' : 'Enable client'}
+            </button>
+          </form>
+        </div>
       </div>
       <div className="mt-5 space-y-4 text-sm text-slate-300">
         <div>

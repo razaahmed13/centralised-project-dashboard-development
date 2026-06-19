@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   revalidatePath: vi.fn(),
   insert: vi.fn(),
   select: vi.fn(),
+  update: vi.fn(),
+  eq: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -15,7 +17,7 @@ vi.mock('@/lib/db', () => ({ getSupabaseAdminClient: mocks.getSupabaseAdminClien
 vi.mock('@/lib/audit', () => ({ createAuditLog: mocks.createAuditLog }));
 vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }));
 
-import { createSsoClientAction } from './sso-clients';
+import { createSsoClientAction, updateSsoClientStatusAction } from './sso-clients';
 
 function formDataForClient() {
   const formData = new FormData();
@@ -34,8 +36,10 @@ describe('createSsoClientAction', () => {
     mocks.createAuditLog.mockResolvedValue(undefined);
     mocks.select.mockResolvedValue({ data: [{ id: '11111111-1111-4111-8111-111111111111' }], error: null });
     mocks.insert.mockReturnValue({ select: mocks.select });
+    mocks.eq.mockResolvedValue({ data: null, error: null });
+    mocks.update.mockReturnValue({ eq: mocks.eq });
     mocks.getSupabaseAdminClient.mockReturnValue({
-      from: vi.fn(() => ({ insert: mocks.insert })),
+      from: vi.fn(() => ({ insert: mocks.insert, update: mocks.update })),
     });
   });
 
@@ -57,5 +61,40 @@ describe('createSsoClientAction', () => {
       entityId: '11111111-1111-4111-8111-111111111111',
     }));
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/sso-clients');
+  });
+
+  it('disables an SSO client by row id and writes an audit log', async () => {
+    const formData = new FormData();
+    formData.set('clientId', '11111111-1111-4111-8111-111111111111');
+    formData.set('clientName', 'Local Test');
+    formData.set('isActive', 'false');
+
+    await updateSsoClientStatusAction(formData);
+
+    expect(mocks.update).toHaveBeenCalledWith({ is_active: false, updated_at: expect.any(String) });
+    expect(mocks.eq).toHaveBeenCalledWith('id', '11111111-1111-4111-8111-111111111111');
+    expect(mocks.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      actor: 'hello@neodym.ai',
+      action: 'sso_client_disabled',
+      entityType: 'sso_client',
+      entityId: '11111111-1111-4111-8111-111111111111',
+      summary: 'Disabled SSO client Local Test',
+    }));
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/sso-clients');
+  });
+
+  it('enables an SSO client by row id and writes an audit log', async () => {
+    const formData = new FormData();
+    formData.set('clientId', '11111111-1111-4111-8111-111111111111');
+    formData.set('clientName', 'Local Test');
+    formData.set('isActive', 'true');
+
+    await updateSsoClientStatusAction(formData);
+
+    expect(mocks.update).toHaveBeenCalledWith({ is_active: true, updated_at: expect.any(String) });
+    expect(mocks.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'sso_client_enabled',
+      summary: 'Enabled SSO client Local Test',
+    }));
   });
 });

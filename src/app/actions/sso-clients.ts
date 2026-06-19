@@ -15,6 +15,12 @@ const ssoClientSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
+const ssoClientStatusSchema = z.object({
+  clientId: z.string().uuid(),
+  clientName: z.string().min(1),
+  isActive: z.boolean(),
+});
+
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === 'string' ? value.trim() : '';
@@ -63,6 +69,33 @@ export async function createSsoClientAction(formData: FormData) {
     entityType: 'sso_client',
     entityId: ssoClientRowId,
     summary: `Registered SSO client ${input.name}`,
+  });
+
+  revalidatePath('/sso-clients');
+}
+
+export async function updateSsoClientStatusAction(formData: FormData) {
+  const session = await requireAdminSession();
+  const input = ssoClientStatusSchema.parse({
+    clientId: getString(formData, 'clientId'),
+    clientName: getString(formData, 'clientName'),
+    isActive: getString(formData, 'isActive') === 'true',
+  });
+
+  const supabase = getSupabaseAdminClient();
+  await assertSupabase(
+    await supabase
+      .from('sso_clients')
+      .update({ is_active: input.isActive, updated_at: new Date().toISOString() })
+      .eq('id', input.clientId),
+  );
+
+  await createAuditLog({
+    actor: session.user?.email ?? undefined,
+    action: input.isActive ? 'sso_client_enabled' : 'sso_client_disabled',
+    entityType: 'sso_client',
+    entityId: input.clientId,
+    summary: `${input.isActive ? 'Enabled' : 'Disabled'} SSO client ${input.clientName}`,
   });
 
   revalidatePath('/sso-clients');
