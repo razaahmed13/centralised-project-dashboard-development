@@ -13,19 +13,45 @@ export function ClientGroupSidebar({
   selectedClientGroupId,
   auditActive = false,
   ssoActive = false,
+  settingsActive = false,
+  isOpen = false,
+  onClose,
 }: {
   clientGroups: ClientGroup[];
   selectedClientGroupId?: string | null;
   auditActive?: boolean;
   ssoActive?: boolean;
+  settingsActive?: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
 }) {
   return (
-    <aside className="hidden h-screen w-72 shrink-0 flex-col border-r border-blue-400/10 bg-slate-950/60 p-5 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:flex">
-      <div className="shrink-0">
-        <Link href="/" className="block text-xl font-semibold tracking-tight text-white">
-          Neodym<span className="text-blue-400">.</span>
-        </Link>
-        <p className="mt-2 text-xs uppercase tracking-[0.28em] text-slate-500">Project Access</p>
+    <aside
+      className={[
+        'h-screen w-72 shrink-0 flex-col border-r border-blue-400/10 bg-slate-950/95 p-5 backdrop-blur-xl transition-all duration-300 lg:bg-slate-950/60',
+        'fixed inset-y-0 left-0 z-40 flex lg:z-20 lg:flex',
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+      ].join(' ')}
+    >
+      <div className="flex items-center justify-between shrink-0">
+        <div>
+          <Link href="/" className="block text-xl font-semibold tracking-tight text-white" onClick={onClose}>
+            Neodym<span className="text-blue-400">.</span>
+          </Link>
+          <p className="mt-2 text-xs uppercase tracking-[0.28em] text-slate-500">Project Access</p>
+        </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close sidebar"
+            className="rounded-full border border-slate-800 p-1.5 text-slate-400 hover:border-blue-300/30 hover:bg-blue-400/5 hover:text-blue-100 lg:hidden"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
       </div>
 
       <div className="mt-10 min-h-0 flex-1">
@@ -39,6 +65,7 @@ export function ClientGroupSidebar({
                 href={`/?client=${group.id}`}
                 className={[baseLinkClass, active ? activeLinkClass : inactiveLinkClass].join(' ')}
                 aria-current={active ? 'page' : undefined}
+                onClick={onClose}
               >
                 <span>{group.name}</span>
                 {active ? <span className="h-2 w-2 rounded-full bg-blue-300 shadow-[0_0_18px_rgba(59,130,246,0.9)]" /> : null}
@@ -49,28 +76,6 @@ export function ClientGroupSidebar({
       </div>
 
       <div className="mt-6 shrink-0 space-y-3">
-        <Link
-          href="/audit"
-          className={[
-            'flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition',
-            auditActive ? activeLinkClass : 'border-slate-800 text-slate-400 hover:border-blue-300/30 hover:text-blue-100',
-          ].join(' ')}
-          aria-current={auditActive ? 'page' : undefined}
-        >
-          <span>Audit Log</span>
-          {auditActive ? <span className="h-2 w-2 rounded-full bg-blue-300 shadow-[0_0_18px_rgba(59,130,246,0.9)]" /> : null}
-        </Link>
-        <Link
-          href="/sso-clients"
-          className={[
-            'flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition',
-            ssoActive ? activeLinkClass : 'border-slate-800 text-slate-400 hover:border-blue-300/30 hover:text-blue-100',
-          ].join(' ')}
-          aria-current={ssoActive ? 'page' : undefined}
-        >
-          <span>SSO Clients</span>
-          {ssoActive ? <span className="h-2 w-2 rounded-full bg-blue-300 shadow-[0_0_18px_rgba(59,130,246,0.9)]" /> : null}
-        </Link>
         <LogoutButton />
       </div>
     </aside>

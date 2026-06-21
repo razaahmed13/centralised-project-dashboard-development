@@ -10,7 +10,7 @@ vi.mock('next-auth/react', () => ({
 }));
 
 describe('AppShell', () => {
-  it('renders the default client group, groups heading, bottom audit link, and dashboard actions', () => {
+  it('renders the default client group, groups heading, and dashboard actions', () => {
     render(
       <AppShell>
         <div>Dashboard content</div>
@@ -19,17 +19,16 @@ describe('AppShell', () => {
 
     expect(screen.getByText(/groups/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /internal projects/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /audit log/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add client/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add project/i })).toBeInTheDocument();
     expect(screen.getByText(/dashboard content/i)).toBeInTheDocument();
   });
 
-  it('renders dynamic client groups on audit pages without marking a client active', () => {
+  it('renders dynamic client groups on settings pages without marking a client active', () => {
     render(
       <AppShell
-        auditActive
+        settingsActive
         selectedClientGroupId={null}
         clientGroups={[
           {
@@ -54,12 +53,11 @@ describe('AppShell', () => {
           },
         ]}
       >
-        <div>Audit content</div>
+        <div>Settings content</div>
       </AppShell>,
     );
 
     expect(screen.getByRole('link', { name: /triangle ip/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /audit log/i })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: /internal projects/i })).not.toHaveAttribute('aria-current');
   });
 
@@ -70,7 +68,7 @@ describe('AppShell', () => {
       </AppShell>,
     );
 
-    expect(screen.getByRole('complementary')).toHaveClass('lg:fixed');
+    expect(screen.getByRole('complementary')).toHaveClass('fixed');
     expect(screen.getByRole('main')).toHaveClass('lg:ml-72');
   });
 

@@ -1,0 +1,28 @@
+{
+  "name": "neodym-dashboard-extension",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node build.mjs --dev",
+    "build": "node build.mjs --production",
+    "build:dev": "node build.mjs --dev",
+    "preview": "vite preview",
+    "lint": "eslint src --ext ts,tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "esbuild": "^0.28.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "vite-plugin-static-copy": "^1.0.6"
+  }
+}

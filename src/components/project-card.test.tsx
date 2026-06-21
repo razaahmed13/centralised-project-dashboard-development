@@ -64,7 +64,7 @@ describe('ProjectCard', () => {
 
     expect(screen.getByText('active')).toHaveClass('uppercase');
     expect(screen.getByRole('heading', { name: /token watcher/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /open & copy credentials/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open & auto-fill/i })).toBeInTheDocument();
 
     const showDetails = screen.getByRole('button', { name: /show details/i });
     expect(showDetails).toHaveClass('border-blue-300/20');

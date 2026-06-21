@@ -75,6 +75,7 @@ export async function createSsoClientAction(formData: FormData) {
   });
 
   revalidatePath('/sso-clients');
+  revalidatePath('/settings');
 }
 
 export async function updateSsoClientStatusAction(formData: FormData) {
@@ -102,4 +103,5 @@ export async function updateSsoClientStatusAction(formData: FormData) {
   });
 
   revalidatePath('/sso-clients');
+  revalidatePath('/settings');
 }

@@ -36,7 +36,7 @@ describe('ProjectLinkButton', () => {
 
     render(<ProjectLinkButton link={credentialLink} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /open & copy credentials/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open & auto-fill/i }));
 
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('neodym\ntokenwatch-dashboard-ashar-2026'));
     await waitFor(() => expect(open).toHaveBeenCalledWith(credentialLink.url, '_blank', 'noopener,noreferrer'));
@@ -54,10 +54,10 @@ describe('ProjectLinkButton', () => {
 
     render(<ProjectLinkButton link={credentialLink} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /open & copy credentials/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open & auto-fill/i }));
 
     await waitFor(() => expect(open).toHaveBeenCalledWith(credentialLink.url, '_blank', 'noopener,noreferrer'));
     expect(await screen.findByText(/manual copy fallback/i)).toBeInTheDocument();
-    expect(screen.getByText(/use manual copy below/i)).toBeInTheDocument();
+    expect(screen.getByText(/manually select and copy/i)).toBeInTheDocument();
   });
 });
