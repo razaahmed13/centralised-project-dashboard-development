@@ -38,31 +38,15 @@ echo "Extension unpacked to:"
 echo "$INSTALL_DIR"
 echo
 
-BROWSER=""
-for candidate in google-chrome google-chrome-stable chromium chromium-browser brave-browser microsoft-edge microsoft-edge-stable; do
-  if command -v "$candidate" >/dev/null 2>&1; then
-    BROWSER="$candidate"
-    break
-  fi
-done
-
-if [[ "${SKIP_BROWSER_OPEN:-0}" == "1" ]]; then
-  echo "Skipping browser open because SKIP_BROWSER_OPEN=1."
-elif [[ -n "$BROWSER" ]]; then
-  echo "Opening extensions page in $BROWSER..."
-  "$BROWSER" "chrome://extensions" >/dev/null 2>&1 &
-else
-  echo "No Chrome/Chromium browser command found automatically."
-  echo "Open chrome://extensions manually in Chrome, Edge, Brave, Arc, or another Chromium browser."
-fi
-
-echo
 echo "Manual browser steps required by browser security:"
-echo "1. Enable Developer Mode."
-echo "2. Click 'Load unpacked'."
-echo "3. Select this folder: $INSTALL_DIR"
-echo "4. Pin the extension manually from the browser toolbar puzzle icon."
-echo "5. Open the extension popup and set Dashboard URL to: $DASHBOARD_URL"
-echo "6. Paste an extension API token generated from Dashboard Settings."
+echo "1. Open your preferred Chrome/Chromium profile manually."
+echo "2. Go to: chrome://extensions"
+echo "3. Enable Developer Mode."
+echo "4. Click 'Load unpacked'."
+echo "5. Select this folder: $INSTALL_DIR"
+echo "6. Pin the extension manually from the browser toolbar puzzle icon."
+echo "7. Open the extension popup and set Dashboard URL to: $DASHBOARD_URL"
+echo "8. Paste an extension API token generated from Dashboard Settings."
 echo
+echo "Note: this installer intentionally does not open Chrome automatically, so you can choose the correct browser profile."
 echo "Browsers do not allow shell scripts to silently install or pin extensions for normal users."
