@@ -95,6 +95,18 @@ export const DOMAIN_RECIPES: LoginFormRecipe[] = [
     submitSelector: 'button[type="submit"]',
   },
   {
+    domain: 'examiners.neodym.ai',
+    waitForSelector: '#adminPassword',
+    passwordSelector: '#adminPassword',
+    submitSelector: 'button.button',
+  },
+  {
+    domain: 'attorneys.neodym.ai',
+    waitForSelector: '#adminPassword',
+    passwordSelector: '#adminPassword',
+    submitSelector: 'button.button',
+  },
+  {
     domain: 'triangleip.com',
     usernameSelector: '#basic_username',
     passwordSelector: 'input[type="password"]',
