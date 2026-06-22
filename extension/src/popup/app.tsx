@@ -183,7 +183,7 @@ export function App() {
                 type="url"
                 value={dashboardUrlInput}
                 onChange={(e) => setDashboardUrlInput(e.target.value)}
-                placeholder="http://localhost:3000"
+                placeholder="https://neodym-centralised-project-dashboard.vercel.app"
               />
             </label>
 

@@ -5,14 +5,31 @@ const STORAGE_KEYS = {
   CREDENTIALS_CACHE: 'neodym_credentials_cache',
 } as const;
 
+const DEFAULT_DASHBOARD_URL = 'https://neodym-centralised-project-dashboard.vercel.app';
+const LEGACY_LOCAL_DASHBOARD_URL = 'http://localhost:3000';
+
 export async function getConfig(): Promise<ExtensionConfig> {
   const result = await chrome.storage.sync.get(STORAGE_KEYS.CONFIG);
   const config = result[STORAGE_KEYS.CONFIG] as ExtensionConfig | undefined;
-  return config ?? {
-    dashboardUrl: 'http://localhost:3000',
-    apiToken: null,
-    enabledDomains: [],
-    autoSubmit: true,
+  if (!config) {
+    return {
+      dashboardUrl: DEFAULT_DASHBOARD_URL,
+      apiToken: null,
+      enabledDomains: [],
+      autoSubmit: true,
+    };
+  }
+
+  if (config.dashboardUrl === LEGACY_LOCAL_DASHBOARD_URL) {
+    return { ...config, dashboardUrl: DEFAULT_DASHBOARD_URL };
+  }
+
+  const { dashboardUrl, apiToken, enabledDomains, autoSubmit } = config;
+  return {
+    dashboardUrl: dashboardUrl || DEFAULT_DASHBOARD_URL,
+    apiToken: apiToken ?? null,
+    enabledDomains: enabledDomains ?? [],
+    autoSubmit: autoSubmit ?? true,
   };
 }
 
