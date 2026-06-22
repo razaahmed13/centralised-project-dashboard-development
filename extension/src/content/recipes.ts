@@ -88,6 +88,13 @@ export const DOMAIN_RECIPES: LoginFormRecipe[] = [
     submitSelector: 'button[type="submit"]',
   },
   {
+    domain: 'data-verification-workspace.vercel.app',
+    waitForSelector: 'input[autocomplete="email"]',
+    usernameSelector: 'input[autocomplete="email"]',
+    passwordSelector: 'input[autocomplete="current-password"]',
+    submitSelector: 'button[type="submit"]',
+  },
+  {
     domain: 'triangleip.com',
     usernameSelector: '#basic_username',
     passwordSelector: 'input[type="password"]',
