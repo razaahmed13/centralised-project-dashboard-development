@@ -3,7 +3,7 @@ set -euo pipefail
 
 DASHBOARD_URL="${DASHBOARD_URL:-http://localhost:3000}"
 EXTENSION_ZIP_URL="${EXTENSION_ZIP_URL:-$DASHBOARD_URL/downloads/neodym-dashboard-extension-local.zip}"
-INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/share/neodym-dashboard-extension}"
+INSTALL_DIR="${INSTALL_DIR:-$HOME/Downloads/neodym-dashboard-extension}"
 TMP_ZIP="$(mktemp -t neodym-dashboard-extension.XXXXXX.zip)"
 
 cleanup() {
