@@ -98,9 +98,9 @@ async function handleMessage(message: ExtensionMessage, sender: chrome.runtime.M
       const { url, linkId, projectName, username, password } = message.payload;
       const tab = await chrome.tabs.create({ url: 'about:blank', active: true });
 
-      if (username && password) {
+      if (username || password) {
         pendingTabCredentials.set(tab.id!, { linkId, url, projectName });
-        if (isBasicAuthSite(url)) {
+        if (username && password && isBasicAuthSite(url)) {
           await openTabWithBasicAuth(tab.id!, url, username, password);
         } else {
           await chrome.tabs.update(tab.id!, { url });
